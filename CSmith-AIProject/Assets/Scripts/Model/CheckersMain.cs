@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,13 +8,28 @@ using UnityEngine;
 /// </summary>
 public class CheckersMain{
 
+
+    [NonSerialized]
+    protected Action boardReset;
+
+
+
+
     /// <summary>
     /// Ordered list of all boardstates prior to this one. All completed games are saved.
     /// TODO: Maybe optimise by storing only moves made instead of entire board state after every move.
     /// </summary>
     private List<Board> prevStates;
 
+    /// <summary>
+    /// The current board state.
+    /// </summary>
     private Board boardState;
+
+    /// <summary>
+    /// The player that is currently taking their action (1 or 2);
+    /// </summary>
+    private int activePlayer;
 
     /// <summary>
     /// Constructor. Initialises lists. Sets up events.
@@ -37,5 +53,9 @@ public class CheckersMain{
         return true;
     }
 
+    public int GetActivePlayer()
+    {
+        return activePlayer;
+    }
 
 }

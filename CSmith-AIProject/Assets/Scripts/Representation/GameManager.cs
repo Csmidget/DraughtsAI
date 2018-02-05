@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum PlayerType { Human,AI}
+public enum PlayerType {Human,AI}
 
 
 public class GameManager : MonoBehaviour {
@@ -46,8 +46,30 @@ public class GameManager : MonoBehaviour {
 		
 	}
 
+    /// <summary>
+    /// Returns the current active GameManager. Saves looking up within scene.
+    /// </summary>
+    /// <returns></returns>
     public static GameManager GetActive()
     {
         return activeManager;
+    }
+
+    /// <summary>
+    /// Returns the model attached to this GameManager
+    /// </summary>
+    /// <returns></returns>
+    public CheckersMain GetModel()
+    {
+        return model;
+    }
+
+    /// <summary>
+    /// Returns the currently active player.
+    /// </summary>
+    /// <returns></returns>
+    public int GetActivePlayer()
+    {
+        return model.GetActivePlayer();
     }
 }
