@@ -1,0 +1,10 @@
+﻿-CheckersMain-
+	<Summary>
+	Central class for checkers model
+
+-Board-
+	<Summary>
+	Dumb class, just stores board state, does not check if moves are valid.
+
+	<Notes>
+	Maybe add functions with move validation?
