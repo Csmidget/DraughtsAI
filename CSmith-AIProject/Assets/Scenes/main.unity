@@ -330,6 +330,8 @@ MonoBehaviour:
     type: 2}
   whiteKingPrefab: {fileID: 1060837198792182, guid: afc2306bb16069d439eb31d83148fe60,
     type: 2}
+  tileOverlayGreen: {fileID: 1850796409888338, guid: 18ae0ad0076cf1e4197942490772f2cb,
+    type: 2}
 --- !u!1 &1873198743
 GameObject:
   m_ObjectHideFlags: 0

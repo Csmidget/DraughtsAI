@@ -4,40 +4,56 @@ using UnityEngine;
 
 public class BoardManager : MonoBehaviour {
 
+    static private BoardManager activeManager;
+
     private Board displayedBoard;
     private GameObject[,] visualBoard;
 
-    private GameManager activeManager;
+    private GameManager gameManager;
+
+    private List<GameObject> tileOverlays;
 
     [SerializeField]
-    GameObject blackStonePrefab;
+    private GameObject blackStonePrefab;
     [SerializeField]
-    GameObject whiteStonePrefab;
+    private GameObject whiteStonePrefab;
     [SerializeField]
-    GameObject blackKingPrefab;
+    private GameObject blackKingPrefab;
     [SerializeField]
-    GameObject whiteKingPrefab;
+    private GameObject whiteKingPrefab;
+    [SerializeField]
+    private GameObject tileOverlayGreen;
 
-
-
-
-    void Start ()
+    private void Awake()
     {
-        visualBoard = new GameObject[4,8];
-        activeManager = GameManager.GetActive();
+        //Destroy this GameManager if one already exists.
+        if (activeManager != null)
+        {
+            Debug.LogError("GameManager already exists, unable to initialize new GameManager");
+            Destroy(this);
+            return;
+        }
+        //set static reference to manager to this manager.
+        activeManager = this;
 
         EventManager.RegisterToEvent("gameReset", SetupBoard);
         EventManager.RegisterToEvent("boardUpdated", UpdateBoard);
+
+        visualBoard = new GameObject[4, 8];
+        tileOverlays = new List<GameObject>();
     }
 
-	void Update ()
+    void OnEnable()
     {
-		
-	}
+        gameManager = GameManager.GetActive();
+    }
+
+
 
     void SetupBoard()
     {
-        displayedBoard = activeManager.GetBoardState();
+
+        displayedBoard = gameManager.GetBoardState();
 
         for (int i = 0; i < 8; i++)
         {
@@ -46,7 +62,7 @@ public class BoardManager : MonoBehaviour {
                 //Magic formula to return grey tiles
                 int k = j * 2 + (1 - (i % 2));
 
-                TileState t = displayedBoard.boardState[k,i];
+                TileState t = displayedBoard.state[k,i];
 
                 visualBoard[j, i] = SetTile(k, i, visualBoard[j, i], t);
             }
@@ -68,30 +84,81 @@ public class BoardManager : MonoBehaviour {
             Destroy(_currentgo);
         }
 
-        Vector2 spawn = new Vector2(_tileX - 3.5f, 3.5f -_tileY);
+        Vector3 spawn = new Vector3(_tileX - 3.5f, 3.5f -_tileY,1);
 
 
+        GameObject newGo = null;
         switch (_newState)
         {
-
             case TileState.BlackPiece:
-                _currentgo = Instantiate(blackStonePrefab, spawn,Quaternion.identity);
+                newGo = Instantiate(blackStonePrefab, spawn,Quaternion.identity);
                 break;
             case TileState.WhitePiece:
-                _currentgo = Instantiate(whiteStonePrefab, spawn, Quaternion.identity);
+                newGo = Instantiate(whiteStonePrefab, spawn, Quaternion.identity);
                 break;
             case TileState.BlackKing:
-                _currentgo = Instantiate(blackKingPrefab, spawn, Quaternion.identity);
+                newGo = Instantiate(blackKingPrefab, spawn, Quaternion.identity);
                 break;
             case TileState.WhiteKing:
-                _currentgo = Instantiate(blackKingPrefab, spawn, Quaternion.identity);
+                newGo = Instantiate(blackKingPrefab, spawn, Quaternion.identity);
                 break;
-            default:
-                _currentgo = null;
-                break;
-
         }
 
-        return null;
+        return newGo;
+    }
+
+    void AddTileOverlay(int _tileX, int _tileY)
+    {
+        //TODO: Clean this up
+        if (_tileX < 8 && _tileY < 8 && _tileX >= 0 && _tileY >= 0 &&
+            displayedBoard.state[_tileX,_tileY] == TileState.Empty)
+        {
+            Vector3 spawn = new Vector3(_tileX - 3.5f, 3.5f - _tileY,5);
+            tileOverlays.Add(Instantiate(tileOverlayGreen, spawn, Quaternion.identity));
+        }
+    }
+
+    public void StonePicked(GameObject _stoneGO)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {        
+                if (visualBoard[j,i] == _stoneGO)
+                {
+                    //Magic formula to return grey tiles
+                    int k = j * 2 + (1 - (i % 2));
+
+                    //   AddTileOverlay(k-1, i-1);
+                    //  AddTileOverlay(k - 1, i + 1);
+                    //  AddTileOverlay(k + 1, i - 1);
+                    //  AddTileOverlay(k + 1, i + 1);
+                    List<StoneMove> validMoves = gameManager.GetValidMoves(k, i);
+                    Debug.Log(validMoves.Count);
+                    foreach (StoneMove sm in validMoves)
+                    {
+                        AddTileOverlay(sm.endPos.x, sm.endPos.y);
+                    }
+                }
+            }
+        }
+    }
+
+    public void StoneDropped(GameObject _stoneGO)
+    {
+        for (int i = 0; i < tileOverlays.Count; i++)
+        {
+            Destroy(tileOverlays[i]);
+        }
+        tileOverlays.Clear();
+    }
+
+    /// <summary>
+    /// Returns the current active BoardManager. Saves looking up within scene.
+    /// </summary>
+    /// <returns></returns>
+    public static BoardManager GetActive()
+    {
+        return activeManager;
     }
 }

@@ -14,51 +14,51 @@ public class Board {
     /// <summary>
     /// Current state of each tile on board. [0,0] = top left. ([x,y])
     /// </summary>
-    public TileState[,] boardState;
+    public TileState[,] state;
 
     /// <summary>
     /// No parameters, assume new game, generate default board
     /// </summary>
     public Board()
     {
-        boardState = new TileState[8, 8];
+        state = new TileState[8, 8];
 
         //Generate empty board
         for (int i = 0; i < 8; i ++)
         {
             for (int j = 0; j < 8; j++)
             {
-                boardState[i, j] = TileState.Empty;
+                state[i, j] = TileState.Empty;
             }
         }
 
         //Setup white Pieces
-        boardState[1, 0] = TileState.WhitePiece;
-        boardState[3, 0] = TileState.WhitePiece;
-        boardState[5, 0] = TileState.WhitePiece;
-        boardState[7, 0] = TileState.WhitePiece;
-        boardState[0, 1] = TileState.WhitePiece;
-        boardState[2, 1] = TileState.WhitePiece;
-        boardState[4, 1] = TileState.WhitePiece;
-        boardState[6, 1] = TileState.WhitePiece;
-        boardState[1, 2] = TileState.WhitePiece;
-        boardState[3, 2] = TileState.WhitePiece;
-        boardState[5, 2] = TileState.WhitePiece;
-        boardState[7, 2] = TileState.WhitePiece;
+        state[1, 0] = TileState.WhitePiece;
+        state[3, 0] = TileState.WhitePiece;
+        state[5, 0] = TileState.WhitePiece;
+        state[7, 0] = TileState.WhitePiece;
+        state[0, 1] = TileState.WhitePiece;
+        state[2, 1] = TileState.WhitePiece;
+        state[4, 1] = TileState.WhitePiece;
+        state[6, 1] = TileState.WhitePiece;
+        state[1, 2] = TileState.WhitePiece;
+        state[3, 2] = TileState.WhitePiece;
+        state[5, 2] = TileState.WhitePiece;
+        state[7, 2] = TileState.WhitePiece;
 
         //Setup black Pieces
-        boardState[0, 7] = TileState.BlackPiece;
-        boardState[2, 7] = TileState.BlackPiece;
-        boardState[4, 7] = TileState.BlackPiece;
-        boardState[6, 7] = TileState.BlackPiece;
-        boardState[1, 6] = TileState.BlackPiece;
-        boardState[3, 6] = TileState.BlackPiece;
-        boardState[5, 6] = TileState.BlackPiece;
-        boardState[7, 6] = TileState.BlackPiece;
-        boardState[0, 5] = TileState.BlackPiece;
-        boardState[2, 5] = TileState.BlackPiece;
-        boardState[4, 5] = TileState.BlackPiece;
-        boardState[6, 5] = TileState.BlackPiece;
+        state[0, 7] = TileState.BlackPiece;
+        state[2, 7] = TileState.BlackPiece;
+        state[4, 7] = TileState.BlackPiece;
+        state[6, 7] = TileState.BlackPiece;
+        state[1, 6] = TileState.BlackPiece;
+        state[3, 6] = TileState.BlackPiece;
+        state[5, 6] = TileState.BlackPiece;
+        state[7, 6] = TileState.BlackPiece;
+        state[0, 5] = TileState.BlackPiece;
+        state[2, 5] = TileState.BlackPiece;
+        state[4, 5] = TileState.BlackPiece;
+        state[6, 5] = TileState.BlackPiece;
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public class Board {
     public Board(TileState[,] _boardState)
     {
         //TODO: Test this, may not work
-        boardState = (TileState[,])_boardState.Clone();
+        state = (TileState[,])_boardState.Clone();
     }
 
     
