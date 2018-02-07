@@ -1,0 +1,1 @@
+http://gclipart.com/crown-transparent_16191/ - Crown icon

@@ -7,6 +7,7 @@ public enum TileState {Empty=0,WhitePiece=1,BlackPiece=2,WhiteKing=3,BlackKing=4
 
 /// <summary>
 /// Dumb class, just stores board state, does not check if moves are valid.
+/// Stores in 8x8 array for simplicity. Could ignore white tiles fully but complicates things.
 /// </summary>
 public class Board {
 

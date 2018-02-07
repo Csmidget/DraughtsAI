@@ -9,13 +9,6 @@ using UnityEngine.Events;
 /// </summary>
 public class CheckersMain{
 
-
-    [NonSerialized]
-    protected UnityAction boardReset;
-
-    [NonSerialized]
-    protected UnityAction turnOver;
-
     /// <summary>
     /// Ordered list of all boardstates prior to this one. All completed games are saved.
     /// TODO: Maybe optimise by storing only moves made instead of entire board state after every move.
@@ -44,7 +37,10 @@ public class CheckersMain{
     {
         //initialise lists
         prevStates = new List<Board>();
-       
+
+        EventManager.CreateEvent("turnOver");
+        EventManager.CreateEvent("gameReset");
+        EventManager.CreateEvent("boardUpdated");
     }
 
     /// <summary>
@@ -55,10 +51,10 @@ public class CheckersMain{
     {
         //initialise board (This will generate a board with initial game setup by default)
         boardState = new Board();
-
-        EventManager.CreateEvent("turnOver", turnOver);
-
         activePlayer = 1;
+
+        EventManager.TriggerEvent("gameReset");
+        
         return true;
     }
 
@@ -69,8 +65,8 @@ public class CheckersMain{
     public bool Update()
     {
 
-       // if (turnComplete)
-       // {
+        if (turnComplete)
+        {
             turnComplete = false;
 
             //Switch active player
@@ -79,7 +75,7 @@ public class CheckersMain{
             else
                 activePlayer = 1;
             EventManager.TriggerEvent("turnOver");
-     //   }
+        }
 
         return true;
     }
@@ -89,20 +85,14 @@ public class CheckersMain{
         return activePlayer;
     }
 
+    public Board GetBoardState()
+    {
+        return boardState;
+    }
+
     public void Destroy()
     {
 
-    }
-
-
-    public void RegisterTurnOverAction(UnityAction _action)
-    {
-        turnOver += _action;
-    }
-
-    public void UnRegisterTurnOverAction(UnityAction _action)
-    {
-        turnOver -= _action;
     }
 
 }

@@ -42,10 +42,11 @@ public class GameManager : MonoBehaviour {
 
 	void Start ()
     {
-        model.Init();
 
-        // model.RegisterTurnOverAction(TurnOver);
         EventManager.RegisterToEvent("turnOver", TurnOver);
+        EventManager.RegisterToEvent("gameReset", GameReset);
+
+        model.Init();        
 	}
 	
 	void Update ()
@@ -56,14 +57,18 @@ public class GameManager : MonoBehaviour {
     void OnDestroy()
     {
         EventManager.UnRegisterFromEvent("turnOver", TurnOver);
-     //   model.UnRegisterTurnOverAction(TurnOver);
-//
+
         model.Destroy();
     }
 
     void TurnOver()
     {
         Debug.Log("TURN OVER");
+    }
+
+    void GameReset()
+    {
+
     }
 
     /// <summary>
@@ -91,5 +96,10 @@ public class GameManager : MonoBehaviour {
     public int GetActivePlayer()
     {
         return model.GetActivePlayer();
+    }
+
+    public Board GetBoardState()
+    {
+        return model.GetBoardState();
     }
 }
