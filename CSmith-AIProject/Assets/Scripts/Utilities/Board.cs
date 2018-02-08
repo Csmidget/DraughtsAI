@@ -73,6 +73,10 @@ public class Board {
         state = (TileState[,])_boardState.Clone();
     }
 
-    
+    public Board Clone()
+    {
+        return new Board(state);
+    }
+
 
 }

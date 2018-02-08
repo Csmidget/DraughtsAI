@@ -107,4 +107,9 @@ public class GameManager : MonoBehaviour {
     {
         return model.GetValidMoves(_startX,_startY);
     }
+
+    public void AttemptMove(StoneMove _move)
+    {
+        model.AttemptMove(_move);
+    }
 }

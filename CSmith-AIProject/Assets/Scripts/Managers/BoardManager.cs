@@ -42,7 +42,7 @@ public class BoardManager : MonoBehaviour {
         EventManager.RegisterToEvent("gameReset", SetupBoard);
         EventManager.RegisterToEvent("boardUpdated", UpdateBoard);
 
-        visualBoard = new GameObject[4, 8];
+        visualBoard = new GameObject[8, 8];
         moveOverlays = new List<GameObject>();
         activeMoves = new List<StoneMove>();
     }
@@ -68,21 +68,35 @@ public class BoardManager : MonoBehaviour {
 
                 TileState t = displayedBoard.state[k,i];
 
-                visualBoard[j, i] = SetTile(k, i, visualBoard[j, i], t);
+                visualBoard[k, i] = SetTile(k, i, t);
             }
         }
     }
 
     void UpdateBoard()
     {
+        Board newBoard = gameManager.GetBoardState();
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                if (newBoard.state[i,j] != displayedBoard.state[i,j])
+                {
+                    visualBoard[i, j] = SetTile(i, j, newBoard.state[i, j]);
+                }
+            }
+        }
+        displayedBoard = newBoard;
         Debug.Log("UPDATE BOARD");
     }
 
-    GameObject SetTile(int _tileX,int _tileY,GameObject _currentgo,TileState _newState)
+    GameObject SetTile(int _tileX,int _tileY,TileState _newState)
     {
-        if (_currentgo != null)
+        GameObject currentGo = visualBoard[_tileX, _tileY];
+
+        if (currentGo != null)
         {
-            Destroy(_currentgo);
+            Destroy(currentGo);
         }
 
         Vector3 spawn = new Vector3(_tileX - 3.5f, 3.5f -_tileY,1);
@@ -101,7 +115,7 @@ public class BoardManager : MonoBehaviour {
                 newGo = Instantiate(blackKingPrefab, spawn, Quaternion.identity);
                 break;
             case TileState.WhiteKing:
-                newGo = Instantiate(blackKingPrefab, spawn, Quaternion.identity);
+                newGo = Instantiate(whiteKingPrefab, spawn, Quaternion.identity);
                 break;
         }
 
@@ -124,12 +138,12 @@ public class BoardManager : MonoBehaviour {
         for (int i = 0; i < 8; i++)
         {
             for (int j = 0; j < 4; j++)
-            {        
-                if (visualBoard[j,i] == _stoneGO)
-                {
-                    //Magic formula to return grey tiles
-                    int k = j * 2 + (1 - (i % 2));
+            {
+                //Magic formula to return grey tiles
+                int k = j * 2 + (1 - (i % 2));
 
+                if (visualBoard[k,i] == _stoneGO)
+                {                 
                     //   AddTileOverlay(k-1, i-1);
                     //  AddTileOverlay(k - 1, i + 1);
                     //  AddTileOverlay(k + 1, i - 1);
@@ -157,7 +171,7 @@ public class BoardManager : MonoBehaviour {
         {
             if (activeMoves[i].endPos == convertedPos)
             {
-
+                gameManager.AttemptMove(activeMoves[i]);
             }
         }
 

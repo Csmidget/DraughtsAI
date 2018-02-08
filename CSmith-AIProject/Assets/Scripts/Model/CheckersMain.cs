@@ -21,7 +21,7 @@ public class CheckersMain{
     /// </summary>
     private List<Board> prevStates;
 
-    private Board stateToAdd;
+    private Board cachedBoardState;
 
     /// <summary>
     /// The current board state.
@@ -59,6 +59,7 @@ public class CheckersMain{
     {
         //initialise board (This will generate a board with initial game setup by default)
         boardState = new Board();
+        cachedBoardState = boardState.Clone();
         activePlayer = 1;
 
         GenerateValidMoveList();
@@ -85,6 +86,8 @@ public class CheckersMain{
                 activePlayer = 1;
 
             GenerateValidMoveList();
+            prevStates.Add(cachedBoardState.Clone());
+            cachedBoardState = boardState.Clone();
             EventManager.TriggerEvent("turnOver");
         }
 
@@ -163,7 +166,50 @@ public class CheckersMain{
     {
         if (validMoves.Contains(_move))
         {
-            
+
+            if (boardState.state[_move.startPos.x, _move.startPos.y] == TileState.BlackPiece && _move.endPos.y == 0)
+            {
+                boardState.state[_move.startPos.x, _move.startPos.y] = TileState.BlackKing;
+            }
+            else if (boardState.state[_move.startPos.x, _move.startPos.y] == TileState.WhitePiece && _move.endPos.y == 7)
+            {
+                boardState.state[_move.startPos.x, _move.startPos.y] = TileState.WhiteKing;
+            }
+
+            boardState.state[_move.endPos.x, _move.endPos.y] = boardState.state[_move.startPos.x, _move.startPos.y];
+            boardState.state[_move.startPos.x, _move.startPos.y] = TileState.Empty;
+
+            bool furtherMoves = false;
+            List<StoneMove> moveCheck = new List<StoneMove>();          
+
+            if (_move.stoneCaptured)
+            {
+                boardState.state[_move.capturedStone.x, _move.capturedStone.y] = TileState.Empty;
+                moveCheck = FindValidMoves(_move.endPos.x, _move.endPos.y);
+                for (int i = 0; i < moveCheck.Count; i++)
+                {
+                    if (moveCheck[i].stoneCaptured)
+                        furtherMoves = true;
+                }
+            }
+
+            if (furtherMoves)
+            {
+                for (int i = moveCheck.Count - 1; i >= 0; i--)
+                {
+                    if (moveCheck[i].stoneCaptured != true)
+                        moveCheck.RemoveAt(i);
+                }
+
+                validMoves = moveCheck;
+
+            }
+            else
+            {
+                turnComplete = true;
+            }
+
+            EventManager.TriggerEvent("boardUpdated");
         }
     }
 
@@ -248,7 +294,7 @@ public class CheckersMain{
         BoardPos movePos = _movePos + (_movePos - _startPos);
 
         //Double check we're still within the board bounds.
-        if (movePos.x > 8 || movePos.x < 0 || movePos.y > 8 || movePos.y < 0)
+        if (movePos.x > 7 || movePos.x < 0 || movePos.y > 7 || movePos.y < 0)
         {
             _move = new StoneMove();
             return false;
@@ -273,7 +319,7 @@ public class CheckersMain{
 
     public Board GetBoardState()
     {
-        return boardState;
+        return boardState.Clone();
     }
 
 
