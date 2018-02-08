@@ -15,6 +15,7 @@ public class BoardManager : MonoBehaviour {
     private List<GameObject> movableStoneOverlays;
 
     private List<StoneMove> activeMoves;
+    private List<StoneMove> validMoves;
 
     [SerializeField]
     private GameObject blackStonePrefab;
@@ -24,8 +25,12 @@ public class BoardManager : MonoBehaviour {
     private GameObject blackKingPrefab;
     [SerializeField]
     private GameObject whiteKingPrefab;
+
     [SerializeField]
     private GameObject tileOverlayGreen;
+    [SerializeField]
+    private GameObject tileOverlayBlue;
+
 
     private void Awake()
     {
@@ -41,10 +46,12 @@ public class BoardManager : MonoBehaviour {
 
         EventManager.RegisterToEvent("gameReset", SetupBoard);
         EventManager.RegisterToEvent("boardUpdated", UpdateBoard);
+        EventManager.RegisterToEvent("turnOver", SpawnMovableStoneOverlays);
 
         visualBoard = new GameObject[8, 8];
         moveOverlays = new List<GameObject>();
         activeMoves = new List<StoneMove>();
+        movableStoneOverlays = new List<GameObject>();
     }
 
     void OnEnable()
@@ -71,10 +78,14 @@ public class BoardManager : MonoBehaviour {
                 visualBoard[k, i] = SetTile(k, i, t);
             }
         }
+
+        SpawnMovableStoneOverlays();
     }
 
     void UpdateBoard()
     {
+        SpawnMovableStoneOverlays();
+
         Board newBoard = gameManager.GetBoardState();
         for (int i = 0; i < 8; i++)
         {
@@ -122,14 +133,48 @@ public class BoardManager : MonoBehaviour {
         return newGo;
     }
 
-    void AddTileOverlay(int _tileX, int _tileY)
+    GameObject AddTileOverlay(int _tileX, int _tileY, string colour)
     {
         //TODO: Clean this up
-        if (_tileX < 8 && _tileY < 8 && _tileX >= 0 && _tileY >= 0 &&
-            displayedBoard.state[_tileX,_tileY] == TileState.Empty)
+        if (_tileX < 8 && _tileY < 8 && _tileX >= 0 && _tileY >= 0)
         {
             Vector3 spawn = new Vector3(_tileX - 3.5f, 3.5f - _tileY,5);
-            moveOverlays.Add(Instantiate(tileOverlayGreen, spawn, Quaternion.identity));
+
+            switch (colour)
+            {
+                case "blue":
+                case "Blue":
+                    Debug.Log("spawnblue");
+                    return Instantiate(tileOverlayBlue, spawn, Quaternion.identity);
+                case "green":
+                case "Green":
+                    return Instantiate(tileOverlayGreen, spawn, Quaternion.identity);
+            }           
+        }
+        return null;
+    }
+
+    public void SpawnMovableStoneOverlays()
+    {
+        foreach (GameObject go in movableStoneOverlays)
+        {
+            Destroy(go);
+        }
+        movableStoneOverlays.Clear();
+
+        validMoves = gameManager.GetAllValidMoves();
+        Debug.Log(validMoves.Count);
+        List<BoardPos> placedOverlays = new List<BoardPos>();
+
+        foreach (StoneMove sm in validMoves)
+        {
+            Debug.Log("kek");
+            if (!placedOverlays.Contains(sm.startPos))
+            {
+                Debug.Log("ton");
+                movableStoneOverlays.Add(AddTileOverlay(sm.startPos.x, sm.startPos.y, "blue"));
+                placedOverlays.Add(sm.startPos);
+            }
         }
     }
 
@@ -144,14 +189,11 @@ public class BoardManager : MonoBehaviour {
 
                 if (visualBoard[k,i] == _stoneGO)
                 {                 
-                    //   AddTileOverlay(k-1, i-1);
-                    //  AddTileOverlay(k - 1, i + 1);
-                    //  AddTileOverlay(k + 1, i - 1);
-                    //  AddTileOverlay(k + 1, i + 1);
-                   activeMoves = gameManager.GetValidMoves(k, i);
+                    
+                    activeMoves = gameManager.GetValidMoves(k, i);
                     foreach (StoneMove sm in activeMoves)
                     {
-                        AddTileOverlay(sm.endPos.x, sm.endPos.y);
+                        moveOverlays.Add(AddTileOverlay(sm.endPos.x, sm.endPos.y, "green"));
                     }
                 }
             }

@@ -32,7 +32,9 @@ public class CheckersMain{
     /// The player that is currently taking their action (1 or 2);
     /// </summary>
     private int activePlayer;
+    private int winner;
 
+    private int blackStones, whiteStones;
     /// <summary>
     /// Set to true when a turn has been completed. Tells the model to process the next turn.
     /// </summary>
@@ -42,12 +44,10 @@ public class CheckersMain{
     /// Constructor. Initialises lists. Sets up events.
     /// </summary>
     public CheckersMain()
-    {
-        //initialise lists
-        prevStates = new List<Board>();
-        validMoves = new List<StoneMove>();
+    {    
         EventManager.CreateEvent("turnOver");
         EventManager.CreateEvent("gameReset");
+        EventManager.CreateEvent("gameOver");
         EventManager.CreateEvent("boardUpdated");
     }
 
@@ -57,10 +57,16 @@ public class CheckersMain{
     /// <returns></returns>
     public bool Init()
     {
+        prevStates = new List<Board>();
+        validMoves = new List<StoneMove>();
+
         //initialise board (This will generate a board with initial game setup by default)
         boardState = new Board();
         cachedBoardState = boardState.Clone();
         activePlayer = 1;
+        blackStones = 12;
+        whiteStones = 12;
+        winner = 0;
 
         GenerateValidMoveList();
         
@@ -88,7 +94,18 @@ public class CheckersMain{
             GenerateValidMoveList();
             prevStates.Add(cachedBoardState.Clone());
             cachedBoardState = boardState.Clone();
-            EventManager.TriggerEvent("turnOver");
+
+            if (blackStones == 0 || whiteStones == 0)
+            {
+                if (blackStones == 0) winner = 2;
+                else winner = 1;
+
+                EventManager.TriggerEvent("gameOver");
+            }
+            else
+            {
+                EventManager.TriggerEvent("turnOver");
+            }
         }
 
         return true;
@@ -162,6 +179,11 @@ public class CheckersMain{
         return returnList;
     }
 
+    public List<StoneMove> GetAllValidMoves()
+    {
+        return validMoves;
+    }
+
     public void AttemptMove(StoneMove _move)
     {
         if (validMoves.Contains(_move))
@@ -184,6 +206,12 @@ public class CheckersMain{
 
             if (_move.stoneCaptured)
             {
+                TileState cappedStone = boardState.state[_move.capturedStone.x, _move.capturedStone.y];
+                if (cappedStone == TileState.BlackKing || cappedStone == TileState.BlackPiece)
+                    blackStones -= 1;
+                else
+                    whiteStones -= 1;
+
                 boardState.state[_move.capturedStone.x, _move.capturedStone.y] = TileState.Empty;
                 moveCheck = FindValidMoves(_move.endPos.x, _move.endPos.y);
                 for (int i = 0; i < moveCheck.Count; i++)
@@ -322,6 +350,10 @@ public class CheckersMain{
         return boardState.Clone();
     }
 
+    public int GetWinner()
+    {
+        return winner;
+    }
 
     public void Destroy()
     {

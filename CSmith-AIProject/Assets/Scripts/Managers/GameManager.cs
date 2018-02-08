@@ -112,4 +112,24 @@ public class GameManager : MonoBehaviour {
     {
         model.AttemptMove(_move);
     }
+
+    public List<StoneMove> GetAllValidMoves()
+    {
+        return model.GetAllValidMoves();
+    }
+
+    public int GetWinner()
+    {
+        return model.GetWinner();
+    }
+
+    public void NewGame()
+    {
+        model.Init();
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
+    }
 }
