@@ -11,7 +11,10 @@ public class BoardManager : MonoBehaviour {
 
     private GameManager gameManager;
 
-    private List<GameObject> tileOverlays;
+    private List<GameObject> moveOverlays;
+    private List<GameObject> movableStoneOverlays;
+
+    private List<StoneMove> activeMoves;
 
     [SerializeField]
     private GameObject blackStonePrefab;
@@ -40,7 +43,8 @@ public class BoardManager : MonoBehaviour {
         EventManager.RegisterToEvent("boardUpdated", UpdateBoard);
 
         visualBoard = new GameObject[4, 8];
-        tileOverlays = new List<GameObject>();
+        moveOverlays = new List<GameObject>();
+        activeMoves = new List<StoneMove>();
     }
 
     void OnEnable()
@@ -67,9 +71,6 @@ public class BoardManager : MonoBehaviour {
                 visualBoard[j, i] = SetTile(k, i, visualBoard[j, i], t);
             }
         }
-
-
-        Debug.Log("SETUP BOARD");
     }
 
     void UpdateBoard()
@@ -114,7 +115,7 @@ public class BoardManager : MonoBehaviour {
             displayedBoard.state[_tileX,_tileY] == TileState.Empty)
         {
             Vector3 spawn = new Vector3(_tileX - 3.5f, 3.5f - _tileY,5);
-            tileOverlays.Add(Instantiate(tileOverlayGreen, spawn, Quaternion.identity));
+            moveOverlays.Add(Instantiate(tileOverlayGreen, spawn, Quaternion.identity));
         }
     }
 
@@ -133,9 +134,8 @@ public class BoardManager : MonoBehaviour {
                     //  AddTileOverlay(k - 1, i + 1);
                     //  AddTileOverlay(k + 1, i - 1);
                     //  AddTileOverlay(k + 1, i + 1);
-                    List<StoneMove> validMoves = gameManager.GetValidMoves(k, i);
-                    Debug.Log(validMoves.Count);
-                    foreach (StoneMove sm in validMoves)
+                   activeMoves = gameManager.GetValidMoves(k, i);
+                    foreach (StoneMove sm in activeMoves)
                     {
                         AddTileOverlay(sm.endPos.x, sm.endPos.y);
                     }
@@ -146,11 +146,28 @@ public class BoardManager : MonoBehaviour {
 
     public void StoneDropped(GameObject _stoneGO)
     {
-        for (int i = 0; i < tileOverlays.Count; i++)
+        //Attempt to move stone to new pos
+        Vector3 dropPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        BoardPos convertedPos = new BoardPos((int)(dropPos.x + 4f), (int)(-(dropPos.y - 4f)));
+        //Debug.Log(convertedPos.x+","+convertedPos.y);
+
+        //TODO: Maybe combine these IF blocks? Test if they are always == in size.
+        for (int i = 0; i < activeMoves.Count; i++)
         {
-            Destroy(tileOverlays[i]);
+            if (activeMoves[i].endPos == convertedPos)
+            {
+
+            }
         }
-        tileOverlays.Clear();
+
+
+        for (int i = 0; i < moveOverlays.Count; i++)
+        {
+            Destroy(moveOverlays[i]);
+        }
+        moveOverlays.Clear();
+        activeMoves.Clear();
     }
 
     /// <summary>

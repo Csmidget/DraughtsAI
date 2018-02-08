@@ -46,6 +46,8 @@ public class Board {
         state[5, 2] = TileState.WhitePiece;
         state[7, 2] = TileState.WhitePiece;
 
+        //state[3, 4] = TileState.WhitePiece;
+
         //Setup black Pieces
         state[0, 7] = TileState.BlackPiece;
         state[2, 7] = TileState.BlackPiece;
