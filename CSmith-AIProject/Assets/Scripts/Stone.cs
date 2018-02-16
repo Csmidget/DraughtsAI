@@ -9,6 +9,9 @@ public class Stone : MonoBehaviour {
     private int owner;
 
     [SerializeField]
+    public int boardPos;
+
+    [SerializeField]
     private bool king;
 
     private bool mouseDown;

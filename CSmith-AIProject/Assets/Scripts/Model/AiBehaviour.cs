@@ -36,24 +36,16 @@ public class AiBehaviour {
             return false;
     }
 
-  //  static public float CalculateHeuristic(Board _boardState, List<StoneMove> _possibleMoves)
-  //  {
-//
-  //  }
-
     static public List<StoneMove> FindAllValidMoves(Board _board, int _activePlayer)
     {
         List<StoneMove> moves = new List<StoneMove>();
         bool captureFound = false;
 
 
-        for (int x = 0; x < 4; x++)
+        for (int i = 0; i < 35; i++)
         {
-            for (int y = 0; y < 8; y++)
-            {
-                //Magic formula to return grey tiles
-                int k = x * 2 + (1 - (y % 2));
-                TileState state = _board.state[k, y];
+
+                TileState state = _board.state[i];
 
                 if (state != TileState.Empty &&
                     (
@@ -62,7 +54,7 @@ public class AiBehaviour {
                     )
                    )
                 {
-                    List<StoneMove> newMoves = FindValidMoves(_board, k, y);  //FindValidMoves(_board, k, j);
+                    List<StoneMove> newMoves = FindValidMoves(_board, i); 
 
                     if (!captureFound)
                     {
@@ -90,24 +82,23 @@ public class AiBehaviour {
                         moves.AddRange(newMoves);
                     }
                 }
-            }
         }
         return moves;
     }
 
-    static public List<StoneMove> FindValidMoves(Board _board, int _startX, int _startY)
+    static public List<StoneMove> FindValidMoves(Board _board, int _startPos)
     {
         int owner;
         //Find the state of the current tile. Used to check ownership.
-        TileState state = _board.state[_startX, _startY];
+        TileState state = _board.state[_startPos];
 
         //If black, owner = 1
-        if (state == TileState.BlackKing || _board.state[_startX, _startY] == TileState.BlackPiece)
+        if (state == TileState.BlackKing || _board.state[_startPos] == TileState.BlackPiece)
         {
             owner = 1;
         }
         //If white, owner = 2
-        else if (state == TileState.WhiteKing || _board.state[_startX, _startY] == TileState.WhitePiece)
+        else if (state == TileState.WhiteKing || _board.state[_startPos] == TileState.WhitePiece)
         {
             owner = 2;
         }
@@ -119,40 +110,39 @@ public class AiBehaviour {
 
         List<StoneMove> moves;
         List<StoneMove> validMoves = new List<StoneMove>();
-        BoardPos startPos = new BoardPos(_startX, _startY);
 
         //Blacks move up the board. Kings can also move up the board
         if (state == TileState.BlackPiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x - 1, startPos.y - 1), out moves)) validMoves.AddRange(moves);
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x + 1, startPos.y - 1), out moves)) validMoves.AddRange(moves);
+            if (TestMove(_board, owner, _startPos, _startPos + 4, out moves)) validMoves.AddRange(moves);
+            if (TestMove(_board, owner, _startPos, _startPos + 5, out moves)) validMoves.AddRange(moves);
         }
         //Whites move down the board. Kings can also move down the board
         if (state == TileState.WhitePiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x - 1, startPos.y + 1), out moves)) validMoves.AddRange(moves);
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x + 1, startPos.y + 1), out moves)) validMoves.AddRange(moves);
+            if (TestMove(_board, owner, _startPos, _startPos - 4, out moves)) validMoves.AddRange(moves);
+            if (TestMove(_board, owner, _startPos, _startPos - 5, out moves)) validMoves.AddRange(moves);
         }
 
         return validMoves;
     }
 
-    static private bool TestMove(Board _board, int owner, BoardPos _startPos, BoardPos _movePos, out List<StoneMove> _moves)
+    static private bool TestMove(Board _board, int owner, int _startPos, int _movePos, out List<StoneMove> _moves)
     {
         _moves = new List<StoneMove>();
 
         //First ensure target position is within the bounds of the board.
-        if (_movePos.x > 7 || _movePos.x < 0 || _movePos.y > 7 || _movePos.y < 0)
+        if (_movePos > 34 || _movePos < 0 || _movePos == 8 || _movePos == 17 || _movePos == 26)
         {
             return false;
         }
 
-        TileState targetState = _board.state[_movePos.x, _movePos.y];
+        TileState targetState = _board.state[_movePos];
 
         //If target tile is empty then move is allowed.
         if (targetState == TileState.Empty)
         {
-            _moves.Add (new StoneMove(_startPos, _movePos, false, new List<BoardPos>()));
+            _moves.Add (new StoneMove(_startPos, _movePos, false, new List<int>()));
             return true;
         }
 
@@ -164,17 +154,17 @@ public class AiBehaviour {
         }
 
         //If we have gotten this far then the tile must be occupied by an enemy! Now we test if there is an unoccupied tile behind them
-        BoardPos movePos = _movePos + (_movePos - _startPos);
+        int movePos = _movePos + (_movePos - _startPos);
 
         //Double check we're still within the board bounds.
-        if (movePos.x > 7 || movePos.x < 0 || movePos.y > 7 || movePos.y < 0)
+        if (movePos > 34 || movePos < 0 || movePos == 8 || movePos == 17 || movePos == 26)
         {
             return false;
         }
 
         //TODO: THIS IS MESSY AS FUCK
         //Final check, if the tile beyond the enemy is empty then they are capturable! But we have to check for further captures that are possible
-        if (_board.state[movePos.x, movePos.y] == TileState.Empty)
+        if (_board.state[movePos] == TileState.Empty)
         {
             List<StoneMove> furtherMoves;
             if (TestFurtherMoves(_board, new StoneMove(_startPos, movePos, true, _movePos), out furtherMoves)) _moves.AddRange(furtherMoves);
@@ -197,9 +187,9 @@ public class AiBehaviour {
 
         List<StoneMove> furtherMoves = new List<StoneMove>();
 
-        BoardPos newPos = _initialMove.endPos;
+        int newPos = _initialMove.endPos;
 
-        TileState state = tempBoard.state[newPos.x, newPos.y];
+        TileState state = tempBoard.state[newPos];
 
         int currPlayer = tempBoard.GetOwner(newPos);
         int enemyPlayer = 0;
@@ -209,16 +199,16 @@ public class AiBehaviour {
 
 
         List<StoneMove> tempMoves = new List<StoneMove>();
-        List<BoardPos> tempCaps = new List<BoardPos>();
+        List<int> tempCaps = new List<int>();
         bool moveFound = false;
-        BoardPos enemyPos,nextPos;
+        int enemyPos,nextPos;
 
-        for (int i = -1; i <= 1; i += 2)
+        for (int i = 4; i <= 5; i ++)
         {
             if (state == TileState.BlackKing || state == TileState.BlackPiece || state == TileState.WhiteKing)
             {
-                enemyPos = new BoardPos(newPos.x + i, newPos.y - 1);
-                nextPos = new BoardPos(enemyPos.x + i, enemyPos.y - 1);         
+                enemyPos = newPos + i;
+                nextPos = enemyPos + i;         
                 if (tempBoard.GetOwner(enemyPos) == enemyPlayer && tempBoard.GetOwner(nextPos) == 0)
                 {
                     moveFound = true;
@@ -226,17 +216,17 @@ public class AiBehaviour {
                     tempCaps.Clear();
                     tempCaps.AddRange(_initialMove.capturedStones);
                     tempCaps.Add(enemyPos);
-                    if (TestFurtherMoves(_board, new StoneMove(_initialMove.startPos, new BoardPos(enemyPos.x + i, enemyPos.y - 1), true, tempCaps), out furtherMoves))
+                    if (TestFurtherMoves(_board, new StoneMove(_initialMove.startPos, nextPos, true, tempCaps), out furtherMoves))
                         _foundMoves.AddRange(furtherMoves);
                     else
-                        _foundMoves.Add(new StoneMove(_initialMove.startPos, new BoardPos(enemyPos.x + i, enemyPos.y - 1), true, tempCaps));
+                        _foundMoves.Add(new StoneMove(_initialMove.startPos, nextPos, true, tempCaps));
                 }
             }
 
             if (state == TileState.BlackKing || state == TileState.WhitePiece || state == TileState.WhiteKing)
             {
-                enemyPos = new BoardPos(newPos.x + i, newPos.y + 1);
-                nextPos = new BoardPos(enemyPos.x + i, enemyPos.y + 1);
+                enemyPos = newPos - i;
+                nextPos  = enemyPos - i;
 
                 if (tempBoard.GetOwner(enemyPos) == enemyPlayer && tempBoard.GetOwner(nextPos) == 0)
                 {
@@ -245,10 +235,10 @@ public class AiBehaviour {
                     tempCaps.Clear();
                     tempCaps.AddRange(_initialMove.capturedStones);
                     tempCaps.Add(enemyPos);
-                    if (TestFurtherMoves(_board, new StoneMove(_initialMove.startPos, new BoardPos(enemyPos.x + i, enemyPos.y + 1), true, tempCaps), out furtherMoves))   
+                    if (TestFurtherMoves(_board, new StoneMove(_initialMove.startPos, nextPos, true, tempCaps), out furtherMoves))   
                         _foundMoves.AddRange(furtherMoves);
                     else
-                        _foundMoves.Add(new StoneMove(_initialMove.startPos, new BoardPos(enemyPos.x + i, enemyPos.y + 1), true, tempCaps));
+                        _foundMoves.Add(new StoneMove(_initialMove.startPos, nextPos, true, tempCaps));
                 }
             }
         }

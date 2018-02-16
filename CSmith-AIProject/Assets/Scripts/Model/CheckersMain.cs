@@ -133,65 +133,62 @@ public class CheckersMain{
     }
 
     //TODO: Optimise
-    static public List<StoneMove> GenerateValidMoveList(Board _board,int _activePlayer)
+    static public List<StoneMove> GenerateValidMoveList(Board _board, int _activePlayer)
     {
 
         List<StoneMove> moves = new List<StoneMove>();
         bool captureFound = false;
 
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 35; i++)
         {
-            for (int j = 0; j < 8; j++)
+
+            TileState state = _board.state[i];
+
+            if (state != TileState.Empty &&
+                (
+                 (_activePlayer == 1 && (state == TileState.BlackKing || state == TileState.BlackPiece)) ||
+                 (_activePlayer == 2 && (state == TileState.WhiteKing || state == TileState.WhitePiece))
+                )
+               )
             {
-                //Magic formula to return grey tiles
-                int k = i * 2 + (1 - (j % 2));
-                TileState state = _board.state[k,j];
+                List<StoneMove> newMoves = FindValidMoves(_board, i);
 
-                if (state != TileState.Empty &&
-                    (
-                     (_activePlayer == 1 && (state == TileState.BlackKing || state == TileState.BlackPiece)) ||
-                     (_activePlayer == 2 && (state == TileState.WhiteKing || state == TileState.WhitePiece))
-                    )
-                   )
+                if (!captureFound)
                 {
-                    List<StoneMove> newMoves = FindValidMoves(_board, k, j);
-
-                    if (!captureFound)
+                    for (int l = 0; l < newMoves.Count; l++)
                     {
-                        for (int l = 0; l < newMoves.Count; l++)
+                        if (newMoves[l].stoneCaptured && !captureFound)
                         {
-                            if (newMoves[l].stoneCaptured && !captureFound)
-                            {
-                                captureFound = true;
-                                moves.Clear();
-                                break;
-                            }
+                            captureFound = true;
+                            moves.Clear();
+                            break;
                         }
-                    }
-
-                    if (captureFound)
-                    {
-                        for (int l = 0; l < newMoves.Count; l++)
-                        {
-                            if (newMoves[l].stoneCaptured)
-                                moves.Add(newMoves[l]);
-                        }
-                    }
-                    else
-                    {
-                        moves.AddRange(newMoves);
                     }
                 }
+
+                if (captureFound)
+                {
+                    for (int l = 0; l < newMoves.Count; l++)
+                    {
+                        if (newMoves[l].stoneCaptured)
+                            moves.Add(newMoves[l]);
+                    }
+                }
+                else
+                {
+                    moves.AddRange(newMoves);
+                }
             }
+
         }
         return moves;
     }
 
-    public List<StoneMove> GetValidMoves(int _startX, int _startY)
+    public List<StoneMove> GetValidMoves(int _startPos)
     {
         List<StoneMove> returnList = new List<StoneMove>();
-        BoardPos pos = new BoardPos(_startX, _startY);
+        int pos = _startPos;
         for (int i = 0; i < validMoves.Count; i++)
         {
             if(validMoves[i].startPos == pos)
@@ -219,9 +216,9 @@ public class CheckersMain{
 
             if (_move.stoneCaptured)
             {
-                foreach (BoardPos bp in _move.capturedStones)
+                foreach (int pos in _move.capturedStones)
                 {
-                    moveCheck = FindValidMoves(boardState, _move.endPos.x, _move.endPos.y);
+                    moveCheck = FindValidMoves(boardState, _move.endPos);
                     for (int i = 0; i < moveCheck.Count; i++)
                     {
                         if (moveCheck[i].stoneCaptured)
@@ -230,18 +227,15 @@ public class CheckersMain{
                 }
 
                 int blackRemaining = 0, whiteRemaining = 0;
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 35; i++)
                 {
-                    for (int j = 0; j < 8; j++)
-                    {
-                        //Magic formula to return grey tiles
-                        int k = i * 2 + (1 - (j % 2));
-                        TileState s = boardState.state[k, j];
+
+                        TileState s = boardState.state[i];
+
                         if (s == TileState.BlackKing || s == TileState.BlackPiece)
                             blackRemaining++;
                         else if (s == TileState.WhiteKing || s == TileState.WhitePiece)
                             whiteRemaining++;     
-                    }
                 }
                 if (blackRemaining == 0)
                 {
@@ -275,44 +269,43 @@ public class CheckersMain{
         }
     }
 
-    static private List<StoneMove> FindValidMoves(Board _board, int _startX,int _startY)
+    static private List<StoneMove> FindValidMoves(Board _board, int _startPos)
     {
         int owner;
         //Find the state of the current tile. Used to check ownership.
-        TileState state = _board.state[_startX, _startY];
+        TileState state = _board.state[_startPos];
 
         //If black, owner = 1
-        if (state == TileState.BlackKing || _board.state[_startX, _startY] == TileState.BlackPiece)
+        if (state == TileState.BlackKing || _board.state[_startPos] == TileState.BlackPiece)
         {
             owner = 1;
         }
         //If white, owner = 2
-        else if (state == TileState.WhiteKing || _board.state[_startX, _startY] == TileState.WhitePiece)
+        else if (state == TileState.WhiteKing || _board.state[_startPos] == TileState.WhitePiece)
         {
             owner = 2;
         }
         //If neither then invalid tile has somehow been sent to this func
         else
         {
-            Debug.LogError("Attempted to get valid moves for unoccupied tile:" + _startX + "," + _startY);
+            Debug.LogError("Attempted to get valid moves for unoccupied tile:" + _startPos);
             return new List<StoneMove>();
         }
 
         StoneMove move;
         List<StoneMove> validMoves = new List<StoneMove>();
-        BoardPos startPos = new BoardPos(_startX, _startY);
 
         //Blacks move up the board. Kings can also move up the board
         if (state == TileState.BlackPiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x-1, startPos.y - 1), out move)) validMoves.Add(move.Clone());
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x+1, startPos.y - 1), out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, _startPos, _startPos+4, out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, _startPos, _startPos+5, out move)) validMoves.Add(move.Clone());
         }
         //Whites move down the board. Kings can also move down the board
         if (state == TileState.WhitePiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x - 1, startPos.y + 1), out move)) validMoves.Add(move.Clone());
-            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x + 1, startPos.y + 1), out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, _startPos, _startPos - 4, out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, _startPos, _startPos - 5, out move)) validMoves.Add(move.Clone());
         }
 
         return validMoves;
@@ -321,51 +314,51 @@ public class CheckersMain{
     /// <summary>
     /// TODO: Optimise?
     /// </summary>
-    /// <param name="owner"></param>
+    /// <param name="_owner"></param>
     /// <param name="_startPos"></param>
     /// <param name="_movePos"></param>
     /// <param name="_move"></param>
     /// <returns></returns>
-    static private bool TestMove(Board _board, int owner, BoardPos _startPos, BoardPos _movePos, out StoneMove _move)
+    static private bool TestMove(Board _board, int _owner, int _startPos, int _movePos, out StoneMove _move)
     {
         //First ensure target position is within the bounds of the board.
-        if (_movePos.x > 7 || _movePos.x < 0 || _movePos.y > 7 || _movePos.y < 0)
+        if (_movePos > 34 || _movePos < 0 || _movePos == 8 || _movePos == 17 || _movePos == 26)
         {
             _move = new StoneMove();
             return false;
         }
 
-        TileState targetState = _board.state[_movePos.x, _movePos.y];
+        TileState targetState = _board.state[_movePos];
 
         //If target tile is empty then move is allowed.
         if (targetState == TileState.Empty)
         {
-            _move = new StoneMove(_startPos, _movePos, false, new List<BoardPos>());
+            _move = new StoneMove(_startPos, _movePos, false, new List<int>());
             return true;
         }
 
         //If target tile is occupied by a stone owned by the same player, move is not valid.
-        if (owner == 1 && (targetState == TileState.BlackKing || targetState == TileState.BlackPiece) ||
-            owner == 2 && (targetState == TileState.WhiteKing || targetState == TileState.WhitePiece))
+        if (_owner == 1 && (targetState == TileState.BlackKing || targetState == TileState.BlackPiece) ||
+            _owner == 2 && (targetState == TileState.WhiteKing || targetState == TileState.WhitePiece))
         {
             _move = new StoneMove();
             return false;
         }
 
         //If we have gotten this far then the tile must be occupied by an enemy! Now we test if there is an unoccupied tile behind them
-        BoardPos movePos = _movePos + (_movePos - _startPos);
+        int movePos = _movePos + (_movePos - _startPos);
 
         //Double check we're still within the board bounds.
-        if (movePos.x > 7 || movePos.x < 0 || movePos.y > 7 || movePos.y < 0)
+        if (movePos > 34 || movePos < 0 || movePos == 8 || movePos == 17 || movePos == 26)
         {
             _move = new StoneMove();
             return false;
         }
 
         //Final check, if the tile beyond the enemy is empty then they are capturable!
-        if (_board.state[movePos.x,movePos.y] == TileState.Empty)
+        if (_board.state[movePos] == TileState.Empty)
         {
-            List<BoardPos> cappedStones = new List<BoardPos>();
+            List<int> cappedStones = new List<int>();
             cappedStones.Add(_movePos);
             _move = new StoneMove(_startPos, movePos, true, cappedStones);
             return true;

@@ -7,7 +7,7 @@ public class BoardManager : MonoBehaviour {
     static private BoardManager activeManager;
 
     private Board displayedBoard;
-    private GameObject[,] visualBoard;
+    private GameObject[] visualBoard;
 
     private GameManager gameManager;
 
@@ -48,7 +48,7 @@ public class BoardManager : MonoBehaviour {
         EventManager.RegisterToEvent("boardUpdated", UpdateBoard);
         EventManager.RegisterToEvent("turnOver", SpawnMovableStoneOverlays);
 
-        visualBoard = new GameObject[8, 8];
+        visualBoard = new GameObject[35];
         moveOverlays = new List<GameObject>();
         activeMoves = new List<StoneMove>();
         movableStoneOverlays = new List<GameObject>();
@@ -65,18 +65,13 @@ public class BoardManager : MonoBehaviour {
     {
 
         displayedBoard = gameManager.GetBoardState();
-
-        for (int i = 0; i < 8; i++)
+        Debug.Log(displayedBoard);
+        for (int i = 0; i < 35; i++)
         {
-            for (int j = 0; j < 4; j++)
-            {
-                //Magic formula to return grey tiles
-                int k = j * 2 + (1 - (i % 2));
 
-                TileState t = displayedBoard.state[k,i];
+                TileState t = displayedBoard.state[i];
 
-                visualBoard[k, i] = SetTile(k, i, t);
-            }
+                visualBoard[i] = SetTile(i, t);
         }
 
         SpawnMovableStoneOverlays();
@@ -87,30 +82,27 @@ public class BoardManager : MonoBehaviour {
         SpawnMovableStoneOverlays();
 
         Board newBoard = gameManager.GetBoardState();
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 35; i++)
         {
-            for (int j = 0; j < 8; j++)
-            {
-                if (newBoard.state[i,j] != displayedBoard.state[i,j])
+                if (newBoard.state[i] != displayedBoard.state[i])
                 {
-                    visualBoard[i, j] = SetTile(i, j, newBoard.state[i, j]);
+                    visualBoard[i] = SetTile(i, newBoard.state[i]);
                 }
-            }
         }
         displayedBoard = newBoard;
         Debug.Log("UPDATE BOARD");
     }
 
-    GameObject SetTile(int _tileX,int _tileY,TileState _newState)
+    GameObject SetTile(int _tilePos,TileState _newState)
     {
-        GameObject currentGo = visualBoard[_tileX, _tileY];
+        GameObject currentGo = visualBoard[_tilePos];
 
         if (currentGo != null)
         {
             Destroy(currentGo);
         }
 
-        Vector3 spawn = new Vector3(_tileX - 3.5f, 3.5f -_tileY,1);
+        Vector3 spawn = BoardToWorldSpace(_tilePos, 1);
 
 
         GameObject newGo = null;
@@ -129,16 +121,19 @@ public class BoardManager : MonoBehaviour {
                 newGo = Instantiate(whiteKingPrefab, spawn, Quaternion.identity);
                 break;
         }
-
+        if (newGo != null) newGo.GetComponent<Stone>().boardPos = _tilePos;
         return newGo;
     }
 
-    GameObject AddTileOverlay(int _tileX, int _tileY, string colour)
+    GameObject AddTileOverlay(int _tilePos, string colour)
     {
         //TODO: Clean this up
-        if (_tileX < 8 && _tileY < 8 && _tileX >= 0 && _tileY >= 0)
+        if (_tilePos < 35 && _tilePos >= 0)
         {
-            Vector3 spawn = new Vector3(_tileX - 3.5f, 3.5f - _tileY,5);
+
+            
+
+            Vector3 spawn = BoardToWorldSpace(_tilePos, 5);
 
             switch (colour)
             {
@@ -162,13 +157,13 @@ public class BoardManager : MonoBehaviour {
         movableStoneOverlays.Clear();
 
         validMoves = gameManager.GetAllValidMoves();
-        List<BoardPos> placedOverlays = new List<BoardPos>();
+        List<int> placedOverlays = new List<int>();
 
         foreach (StoneMove sm in validMoves)
         {
             if (!placedOverlays.Contains(sm.startPos))
             {
-                movableStoneOverlays.Add(AddTileOverlay(sm.startPos.x, sm.startPos.y, "blue"));
+                movableStoneOverlays.Add(AddTileOverlay(sm.startPos, "blue"));
                 placedOverlays.Add(sm.startPos);
             }
         }
@@ -176,24 +171,32 @@ public class BoardManager : MonoBehaviour {
 
     public void StonePicked(GameObject _stoneGO)
     {
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 35; i++)
         {
-            for (int j = 0; j < 4; j++)
-            {
-                //Magic formula to return grey tiles
-                int k = j * 2 + (1 - (i % 2));
-
-                if (visualBoard[k,i] == _stoneGO)
+                if (visualBoard[i] == _stoneGO)
                 {                 
                     
-                    activeMoves = gameManager.GetValidMoves(k, i);
+                    activeMoves = gameManager.GetValidMoves(i);
                     foreach (StoneMove sm in activeMoves)
                     {
-                        moveOverlays.Add(AddTileOverlay(sm.endPos.x, sm.endPos.y, "green"));
+                        moveOverlays.Add(AddTileOverlay(sm.endPos, "green"));
                     }
                 }
             }
-        }
+    }
+
+    public Vector3 BoardToWorldSpace(int _boardPos,float z)
+    {
+        float mod = 0;
+        if (_boardPos > 8) mod -= 0.25f;
+        if (_boardPos > 17) mod -= 0.25f;
+        if (_boardPos > 26) mod -= 0.25f;
+
+        int yPos = -(int)((_boardPos / 4f) + mod);
+        int xPos = -((_boardPos * 2) + (1 + (10 * yPos) - yPos) ) % 8;
+
+        return new Vector3(xPos + 3.5f, -3.5f - yPos, z);
+
     }
 
     public void StoneDropped(GameObject _stoneGO)
@@ -201,8 +204,24 @@ public class BoardManager : MonoBehaviour {
         //Attempt to move stone to new pos
         Vector3 dropPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        BoardPos convertedPos = new BoardPos((int)(dropPos.x + 4f), (int)(-(dropPos.y - 4f)));
-        //Debug.Log(convertedPos.x+","+convertedPos.y);
+        int convertedPos = -1;
+
+        int whiteCheck = ((int)(dropPos.x + 4f) + (int)(-4f - dropPos.y)) % 2;
+
+        if (whiteCheck == 0)
+        {
+
+            convertedPos = ((int)(-dropPos.x + 5f) + (8 * (int)(3.99f + dropPos.y) + 1)) / 2;
+
+            int mod = 1;
+            if (convertedPos - mod >= 8) mod -= 1;
+            if (convertedPos - mod >= 17) mod -= 1;
+            if (convertedPos - mod >= 26) mod -= 1;
+
+            convertedPos -= mod;
+
+        }
+        Debug.Log(convertedPos);
 
         //TODO: Maybe combine these IF blocks? Test if they are always == in size.
         for (int i = 0; i < activeMoves.Count; i++)

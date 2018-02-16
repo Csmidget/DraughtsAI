@@ -4,26 +4,26 @@ using UnityEngine;
 
 public struct StoneMove
 {
-    public BoardPos startPos;
-    public BoardPos endPos;
+    public int startPos;
+    public int endPos;
     public bool stoneCaptured;
-    public List<BoardPos> capturedStones;
+    public List<int> capturedStones;
 
-    public StoneMove(BoardPos _startPos, BoardPos _endPos, bool _stoneCaptured, List<BoardPos> _capturedStones)
+    public StoneMove(int _startPos, int _endPos, bool _stoneCaptured, List<int> _capturedStones)
     {
         startPos = _startPos;
         endPos = _endPos;
         stoneCaptured = _stoneCaptured;
-        capturedStones = new List<BoardPos>();
+        capturedStones = new List<int>();
         capturedStones.AddRange(_capturedStones);
     }
 
-    public StoneMove(BoardPos _startPos, BoardPos _endPos, bool _stoneCaptured, BoardPos _capturedStone)
+    public StoneMove(int _startPos, int _endPos, bool _stoneCaptured, int _capturedStone)
     {
         startPos = _startPos;
         endPos = _endPos;
         stoneCaptured = _stoneCaptured;
-        capturedStones = new List<BoardPos>();
+        capturedStones = new List<int>();
         capturedStones.Add(_capturedStone);
     }
 
@@ -32,7 +32,7 @@ public struct StoneMove
         return new StoneMove(startPos, endPos, stoneCaptured, capturedStones);
     }
 
-    public void AddCapture(BoardPos _cappedStone)
+    public void AddCapture(int _cappedStone)
     {
         capturedStones.Add(_cappedStone);
     }

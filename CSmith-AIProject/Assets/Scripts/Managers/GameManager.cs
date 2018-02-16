@@ -102,9 +102,9 @@ public class GameManager : MonoBehaviour {
         return model.GetBoardState();
     }
 
-    public List<StoneMove> GetValidMoves(int _startX, int _startY)
+    public List<StoneMove> GetValidMoves(int _startPos)
     {
-        return model.GetValidMoves(_startX,_startY);
+        return model.GetValidMoves(_startPos);
     }
 
     public void AttemptMove(StoneMove _move)
