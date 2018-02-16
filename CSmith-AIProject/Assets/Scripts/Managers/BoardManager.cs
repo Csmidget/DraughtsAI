@@ -144,7 +144,6 @@ public class BoardManager : MonoBehaviour {
             {
                 case "blue":
                 case "Blue":
-                    Debug.Log("spawnblue");
                     return Instantiate(tileOverlayBlue, spawn, Quaternion.identity);
                 case "green":
                 case "Green":
@@ -163,15 +162,12 @@ public class BoardManager : MonoBehaviour {
         movableStoneOverlays.Clear();
 
         validMoves = gameManager.GetAllValidMoves();
-        Debug.Log(validMoves.Count);
         List<BoardPos> placedOverlays = new List<BoardPos>();
 
         foreach (StoneMove sm in validMoves)
         {
-            Debug.Log("kek");
             if (!placedOverlays.Contains(sm.startPos))
             {
-                Debug.Log("ton");
                 movableStoneOverlays.Add(AddTileOverlay(sm.startPos.x, sm.startPos.y, "blue"));
                 placedOverlays.Add(sm.startPos);
             }

@@ -37,7 +37,7 @@ public class GameManager : MonoBehaviour {
         EventManager.Init();
 
         //Create Model. Done in awake to allow other managers to register for events within OnEnable/Start
-        model = new CheckersMain();
+        model = new CheckersMain(player1, player2) ;
     }
 
 	void Start ()
@@ -63,7 +63,6 @@ public class GameManager : MonoBehaviour {
 
     void TurnOver()
     {
-        Debug.Log("TURN OVER");
     }
 
     void GameReset()

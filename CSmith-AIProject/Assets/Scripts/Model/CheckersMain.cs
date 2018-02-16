@@ -12,6 +12,7 @@ using UnityEngine.Events;
 /// </summary>
 public class CheckersMain{
 
+    PlayerType p1Type,p2Type;
 
     private List<StoneMove> validMoves;
 
@@ -22,6 +23,8 @@ public class CheckersMain{
     private List<Board> prevStates;
 
     private Board cachedBoardState;
+
+    private int aiTurnDelay;
 
     /// <summary>
     /// The current board state.
@@ -34,7 +37,6 @@ public class CheckersMain{
     private int activePlayer;
     private int winner;
 
-    private int blackStones, whiteStones;
     /// <summary>
     /// Set to true when a turn has been completed. Tells the model to process the next turn.
     /// </summary>
@@ -43,12 +45,15 @@ public class CheckersMain{
     /// <summary>
     /// Constructor. Initialises lists. Sets up events.
     /// </summary>
-    public CheckersMain()
+    public CheckersMain(PlayerType _p1Type, PlayerType _p2Type)
     {    
         EventManager.CreateEvent("turnOver");
         EventManager.CreateEvent("gameReset");
         EventManager.CreateEvent("gameOver");
         EventManager.CreateEvent("boardUpdated");
+
+        p1Type = _p1Type;
+        p2Type = _p2Type;
     }
 
     /// <summary>
@@ -64,11 +69,9 @@ public class CheckersMain{
         boardState = new Board();
         cachedBoardState = boardState.Clone();
         activePlayer = 1;
-        blackStones = 12;
-        whiteStones = 12;
         winner = 0;
 
-        GenerateValidMoveList();
+        validMoves = GenerateValidMoveList(boardState, activePlayer);
         
         EventManager.TriggerEvent("gameReset");
         
@@ -91,30 +94,49 @@ public class CheckersMain{
             else
                 activePlayer = 1;
 
-            GenerateValidMoveList();
+            if ((activePlayer == 1 && p1Type == PlayerType.Human) || (activePlayer == 2 && p2Type == PlayerType.Human))
+            {
+                validMoves = GenerateValidMoveList(boardState, activePlayer);
+            }
+            else aiTurnDelay = 5;
+       
             prevStates.Add(cachedBoardState.Clone());
             cachedBoardState = boardState.Clone();
+            
+            EventManager.TriggerEvent("turnOver");
+        }
 
-            if (blackStones == 0 || whiteStones == 0)
-            {
-                if (blackStones == 0) winner = 2;
-                else winner = 1;
-
-                EventManager.TriggerEvent("gameOver");
-            }
+        if ((activePlayer == 1 && p1Type == PlayerType.AI) || (activePlayer == 2 && p2Type == PlayerType.AI))
+        {
+            if (aiTurnDelay > 0)
+                aiTurnDelay -= 1;
             else
             {
-                EventManager.TriggerEvent("turnOver");
+                StoneMove chosenMove = new StoneMove();
+                if (AiBehaviour.PerformTurn(boardState, activePlayer, out chosenMove))
+                {
+                    boardState.ResolveMove(chosenMove);
+                    turnComplete = true;
+                    EventManager.TriggerEvent("boardUpdated");
+                }
+                else
+                {
+                    Debug.Log("No possible moves found for AI");
+                    turnComplete = true;
+                }
             }
         }
+
+
 
         return true;
     }
 
     //TODO: Optimise
-    public void GenerateValidMoveList()
+    static public List<StoneMove> GenerateValidMoveList(Board _board,int _activePlayer)
     {
-        validMoves.Clear();
+
+        List<StoneMove> moves = new List<StoneMove>();
         bool captureFound = false;
 
 
@@ -124,16 +146,16 @@ public class CheckersMain{
             {
                 //Magic formula to return grey tiles
                 int k = i * 2 + (1 - (j % 2));
-                TileState state = boardState.state[k,j];
+                TileState state = _board.state[k,j];
 
                 if (state != TileState.Empty &&
                     (
-                     (activePlayer == 1 && (state == TileState.BlackKing || state == TileState.BlackPiece)) ||
-                     (activePlayer == 2 && (state == TileState.WhiteKing || state == TileState.WhitePiece))
+                     (_activePlayer == 1 && (state == TileState.BlackKing || state == TileState.BlackPiece)) ||
+                     (_activePlayer == 2 && (state == TileState.WhiteKing || state == TileState.WhitePiece))
                     )
                    )
                 {
-                    List<StoneMove> newMoves = FindValidMoves(k,j);
+                    List<StoneMove> newMoves = FindValidMoves(_board, k, j);
 
                     if (!captureFound)
                     {
@@ -142,7 +164,7 @@ public class CheckersMain{
                             if (newMoves[l].stoneCaptured && !captureFound)
                             {
                                 captureFound = true;
-                                validMoves.Clear();
+                                moves.Clear();
                                 break;
                             }
                         }
@@ -153,16 +175,17 @@ public class CheckersMain{
                         for (int l = 0; l < newMoves.Count; l++)
                         {
                             if (newMoves[l].stoneCaptured)
-                                validMoves.Add(newMoves[l]);
+                                moves.Add(newMoves[l]);
                         }
                     }
                     else
                     {
-                        validMoves.AddRange(newMoves);
+                        moves.AddRange(newMoves);
                     }
                 }
             }
         }
+        return moves;
     }
 
     public List<StoneMove> GetValidMoves(int _startX, int _startY)
@@ -189,35 +212,46 @@ public class CheckersMain{
         if (validMoves.Contains(_move))
         {
 
-            if (boardState.state[_move.startPos.x, _move.startPos.y] == TileState.BlackPiece && _move.endPos.y == 0)
-            {
-                boardState.state[_move.startPos.x, _move.startPos.y] = TileState.BlackKing;
-            }
-            else if (boardState.state[_move.startPos.x, _move.startPos.y] == TileState.WhitePiece && _move.endPos.y == 7)
-            {
-                boardState.state[_move.startPos.x, _move.startPos.y] = TileState.WhiteKing;
-            }
-
-            boardState.state[_move.endPos.x, _move.endPos.y] = boardState.state[_move.startPos.x, _move.startPos.y];
-            boardState.state[_move.startPos.x, _move.startPos.y] = TileState.Empty;
-
             bool furtherMoves = false;
-            List<StoneMove> moveCheck = new List<StoneMove>();          
+            List<StoneMove> moveCheck = new List<StoneMove>();
+
+            boardState.ResolveMove(_move);
 
             if (_move.stoneCaptured)
             {
-                TileState cappedStone = boardState.state[_move.capturedStone.x, _move.capturedStone.y];
-                if (cappedStone == TileState.BlackKing || cappedStone == TileState.BlackPiece)
-                    blackStones -= 1;
-                else
-                    whiteStones -= 1;
-
-                boardState.state[_move.capturedStone.x, _move.capturedStone.y] = TileState.Empty;
-                moveCheck = FindValidMoves(_move.endPos.x, _move.endPos.y);
-                for (int i = 0; i < moveCheck.Count; i++)
+                foreach (BoardPos bp in _move.capturedStones)
                 {
-                    if (moveCheck[i].stoneCaptured)
-                        furtherMoves = true;
+                    moveCheck = FindValidMoves(boardState, _move.endPos.x, _move.endPos.y);
+                    for (int i = 0; i < moveCheck.Count; i++)
+                    {
+                        if (moveCheck[i].stoneCaptured)
+                            furtherMoves = true;
+                    }
+                }
+
+                int blackRemaining = 0, whiteRemaining = 0;
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 8; j++)
+                    {
+                        //Magic formula to return grey tiles
+                        int k = i * 2 + (1 - (j % 2));
+                        TileState s = boardState.state[k, j];
+                        if (s == TileState.BlackKing || s == TileState.BlackPiece)
+                            blackRemaining++;
+                        else if (s == TileState.WhiteKing || s == TileState.WhitePiece)
+                            whiteRemaining++;     
+                    }
+                }
+                if (blackRemaining == 0)
+                {
+                    winner = 2;
+                    EventManager.TriggerEvent("gameOver");
+                }
+                else if (whiteRemaining == 0)
+                {
+                    winner = 1;
+                    EventManager.TriggerEvent("gameOver");
                 }
             }
 
@@ -241,19 +275,19 @@ public class CheckersMain{
         }
     }
 
-    private List<StoneMove> FindValidMoves(int _startX,int _startY)
+    static private List<StoneMove> FindValidMoves(Board _board, int _startX,int _startY)
     {
         int owner;
         //Find the state of the current tile. Used to check ownership.
-        TileState state = boardState.state[_startX, _startY];
+        TileState state = _board.state[_startX, _startY];
 
         //If black, owner = 1
-        if (state == TileState.BlackKing || boardState.state[_startX, _startY] == TileState.BlackPiece)
+        if (state == TileState.BlackKing || _board.state[_startX, _startY] == TileState.BlackPiece)
         {
             owner = 1;
         }
         //If white, owner = 2
-        else if (state == TileState.WhiteKing || boardState.state[_startX, _startY] == TileState.WhitePiece)
+        else if (state == TileState.WhiteKing || _board.state[_startX, _startY] == TileState.WhitePiece)
         {
             owner = 2;
         }
@@ -271,14 +305,14 @@ public class CheckersMain{
         //Blacks move up the board. Kings can also move up the board
         if (state == TileState.BlackPiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TryMove(owner, startPos, new BoardPos(startPos.x-1, startPos.y - 1), out move)) validMoves.Add(move.Clone());
-            if (TryMove(owner, startPos, new BoardPos(startPos.x+1, startPos.y - 1), out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x-1, startPos.y - 1), out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x+1, startPos.y - 1), out move)) validMoves.Add(move.Clone());
         }
         //Whites move down the board. Kings can also move down the board
         if (state == TileState.WhitePiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TryMove(owner, startPos, new BoardPos(startPos.x - 1, startPos.y + 1), out move)) validMoves.Add(move.Clone());
-            if (TryMove(owner, startPos, new BoardPos(startPos.x + 1, startPos.y + 1), out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x - 1, startPos.y + 1), out move)) validMoves.Add(move.Clone());
+            if (TestMove(_board, owner, startPos, new BoardPos(startPos.x + 1, startPos.y + 1), out move)) validMoves.Add(move.Clone());
         }
 
         return validMoves;
@@ -292,7 +326,7 @@ public class CheckersMain{
     /// <param name="_movePos"></param>
     /// <param name="_move"></param>
     /// <returns></returns>
-    private bool TryMove(int owner, BoardPos _startPos, BoardPos _movePos, out StoneMove _move)
+    static private bool TestMove(Board _board, int owner, BoardPos _startPos, BoardPos _movePos, out StoneMove _move)
     {
         //First ensure target position is within the bounds of the board.
         if (_movePos.x > 7 || _movePos.x < 0 || _movePos.y > 7 || _movePos.y < 0)
@@ -301,12 +335,12 @@ public class CheckersMain{
             return false;
         }
 
-        TileState targetState = boardState.state[_movePos.x, _movePos.y];
+        TileState targetState = _board.state[_movePos.x, _movePos.y];
 
         //If target tile is empty then move is allowed.
         if (targetState == TileState.Empty)
         {
-            _move = new StoneMove(_startPos, _movePos, false, new BoardPos());
+            _move = new StoneMove(_startPos, _movePos, false, new List<BoardPos>());
             return true;
         }
 
@@ -329,9 +363,11 @@ public class CheckersMain{
         }
 
         //Final check, if the tile beyond the enemy is empty then they are capturable!
-        if (boardState.state[movePos.x,movePos.y] == TileState.Empty)
+        if (_board.state[movePos.x,movePos.y] == TileState.Empty)
         {
-            _move = new StoneMove(_startPos, movePos, true, _movePos);
+            List<BoardPos> cappedStones = new List<BoardPos>();
+            cappedStones.Add(_movePos);
+            _move = new StoneMove(_startPos, movePos, true, cappedStones);
             return true;
         }
 

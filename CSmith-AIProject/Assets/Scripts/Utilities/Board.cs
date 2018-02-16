@@ -78,5 +78,68 @@ public class Board {
         return new Board(state);
     }
 
+    public void ResolveMove(StoneMove _move)
+    {
+        if (state[_move.startPos.x, _move.startPos.y] == TileState.BlackPiece && _move.endPos.y == 0)
+        {
+            state[_move.startPos.x, _move.startPos.y] = TileState.BlackKing;
+        }
+        else if (state[_move.startPos.x, _move.startPos.y] == TileState.WhitePiece && _move.endPos.y == 7)
+        {
+            state[_move.startPos.x, _move.startPos.y] = TileState.WhiteKing;
+        }
 
+        state[_move.endPos.x, _move.endPos.y] = state[_move.startPos.x, _move.startPos.y];
+        state[_move.startPos.x, _move.startPos.y] = TileState.Empty;
+
+        if (_move.stoneCaptured)
+        {
+            foreach (BoardPos bp in _move.capturedStones)
+            {
+                TileState cappedStone = state[bp.x, bp.y];
+                state[bp.x, bp.y] = TileState.Empty;
+            }
+        }
+    }
+
+    public int GetOwner(BoardPos _pos)
+    {
+        if (_pos.x > 7 || _pos.x < 0 || _pos.y > 7 || _pos.y < 0)
+        {
+            return -1;
+        }
+        if (state[_pos.x, _pos.y] == TileState.BlackPiece || state[_pos.x, _pos.y] == TileState.BlackKing)
+            return 1;
+        else if (state[_pos.x, _pos.y] == TileState.WhitePiece || state[_pos.x, _pos.y] == TileState.WhiteKing)
+            return 2;
+        else
+            return 0;
+    }
+
+    public int GetNumBlack()
+    {
+        int count = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                if (state[i, j] == TileState.BlackKing || state[i, j] == TileState.BlackPiece)
+                    count++;                       
+            }
+        }
+        return count;
+    }
+    public int GetNumWhite()
+    {
+        int count = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                if (state[i, j] == TileState.WhiteKing || state[i, j] == TileState.WhitePiece)
+                    count++;
+            }
+        }
+        return count;
+    }
 }
