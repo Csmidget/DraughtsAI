@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using System.Threading;
 
@@ -8,10 +9,16 @@ public class AiBehaviour {
 
     static public bool PerformTurn(Board _currentBoard, int _aiPlayer, out StoneMove _move)
     {
+ 
+        Search.iterations = 0;
         _move = new StoneMove();
         List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer);
+        UnityEngine.Debug.Log("Valid Moves:" + possibleMoves.Count);
         if (possibleMoves.Count > 0)
         {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             StoneMove selectedMove = possibleMoves[0];
             float selectedMoveValue = -Mathf.Infinity;
             if (possibleMoves.Count > 1)
@@ -29,7 +36,11 @@ public class AiBehaviour {
                     }
                 }
             }
+            UnityEngine.Debug.Log("iterations: " + Search.iterations);
+            stopWatch.Stop();
+            UnityEngine.Debug.Log("Turn time:" + stopWatch.Elapsed);
             _move = selectedMove;
+         
             return true;
         }
         else
@@ -39,97 +50,47 @@ public class AiBehaviour {
     static public List<StoneMove> FindAllValidMoves(Board _board, int _activePlayer)
     {
         List<StoneMove> moves = new List<StoneMove>();
+        bool firstCap = true;
         bool captureFound = false;
 
-
+        //Test every tile on the board
         for (int i = 0; i < 35; i++)
         {
-
-                TileState state = _board.state[i];
-
-                if (state != TileState.Empty &&
-                    (
-                     (_activePlayer == 1 && (state == TileState.BlackKing || state == TileState.BlackPiece)) ||
-                     (_activePlayer == 2 && (state == TileState.WhiteKing || state == TileState.WhitePiece))
-                    )
-                   )
-                {
-                    List<StoneMove> newMoves = FindValidMoves(_board, i); 
-
-                    if (!captureFound)
-                    {
-                        for (int l = 0; l < newMoves.Count; l++)
-                        {
-                            if (newMoves[l].stoneCaptured && !captureFound)
-                            {
-                                captureFound = true;
-                                moves.Clear();
-                                break;
-                            }
-                        }
-                    }
-
-                    if (captureFound)
-                    {
-                        for (int l = 0; l < newMoves.Count; l++)
-                        {
-                            if (newMoves[l].stoneCaptured)
-                                moves.Add(newMoves[l]);
-                        }
-                    }
-                    else
-                    {
-                        moves.AddRange(newMoves);
-                    }
-                }
+            if (_board.state[i] != TileState.Empty && _activePlayer == _board.GetOwner(i))
+            {
+                FindValidMoves(_board, i, ref captureFound, ref firstCap, ref moves);
+            }
         }
         return moves;
     }
 
-    static public List<StoneMove> FindValidMoves(Board _board, int _startPos)
+    static public void FindValidMoves(Board _board, int _startPos,ref bool _captureFound, ref bool _firstCap, ref List<StoneMove> _moves)
     {
-        int owner;
+        int owner = _board.GetOwner(_startPos);
         //Find the state of the current tile. Used to check ownership.
         TileState state = _board.state[_startPos];
-
-        //If black, owner = 1
-        if (state == TileState.BlackKing || _board.state[_startPos] == TileState.BlackPiece)
+        
+        if (owner != 1 && owner != 2)
         {
-            owner = 1;
+            return;
         }
-        //If white, owner = 2
-        else if (state == TileState.WhiteKing || _board.state[_startPos] == TileState.WhitePiece)
-        {
-            owner = 2;
-        }
-        //If neither then invalid tile
-        else
-        {
-            return new List<StoneMove>();
-        }
-
-        List<StoneMove> moves;
-        List<StoneMove> validMoves = new List<StoneMove>();
 
         //Blacks move up the board. Kings can also move up the board
         if (state == TileState.BlackPiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TestMove(_board, owner, _startPos, _startPos + 4, out moves)) validMoves.AddRange(moves);
-            if (TestMove(_board, owner, _startPos, _startPos + 5, out moves)) validMoves.AddRange(moves);
+            TestMove(_board, owner, _startPos, _startPos + 4, ref _captureFound, ref _firstCap, ref _moves);
+            TestMove(_board, owner, _startPos, _startPos + 5, ref _captureFound, ref _firstCap, ref _moves);
         }
         //Whites move down the board. Kings can also move down the board
         if (state == TileState.WhitePiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            if (TestMove(_board, owner, _startPos, _startPos - 4, out moves)) validMoves.AddRange(moves);
-            if (TestMove(_board, owner, _startPos, _startPos - 5, out moves)) validMoves.AddRange(moves);
+            TestMove(_board, owner, _startPos, _startPos - 4, ref _captureFound, ref _firstCap, ref _moves);
+            TestMove(_board, owner, _startPos, _startPos - 5, ref _captureFound, ref _firstCap, ref _moves);
         }
-
-        return validMoves;
     }
 
-    static private bool TestMove(Board _board, int owner, int _startPos, int _movePos, out List<StoneMove> _moves)
+    static private bool TestMove(Board _board, int _owner, int _startPos, int _movePos, ref bool _captureFound, ref bool _firstCap, ref List<StoneMove> _moves)
     {
-        _moves = new List<StoneMove>();
 
         //First ensure target position is within the bounds of the board.
         if (_movePos > 34 || _movePos < 0 || _movePos == 8 || _movePos == 17 || _movePos == 26)
@@ -139,36 +100,43 @@ public class AiBehaviour {
 
         TileState targetState = _board.state[_movePos];
 
+        //If target tile is occupied by a stone owned by the same player, move is not valid.
+        if (_owner == 1 && (targetState == TileState.BlackKing || targetState == TileState.BlackPiece) ||
+            _owner == 2 && (targetState == TileState.WhiteKing || targetState == TileState.WhitePiece))
+        {
+            return false;
+        }
+
         //If target tile is empty then move is allowed.
         if (targetState == TileState.Empty)
         {
-            _moves.Add (new StoneMove(_startPos, _movePos, false, new List<int>()));
+            if (_captureFound)
+                return false;
+            _moves.Add (new StoneMove(_startPos, _movePos, false, 0));
             return true;
         }
 
-        //If target tile is occupied by a stone owned by the same player, move is not valid.
-        if (owner == 1 && (targetState == TileState.BlackKing || targetState == TileState.BlackPiece) ||
-            owner == 2 && (targetState == TileState.WhiteKing || targetState == TileState.WhitePiece))
-        {
-            return false;
-        }
-
         //If we have gotten this far then the tile must be occupied by an enemy! Now we test if there is an unoccupied tile behind them
-        int movePos = _movePos + (_movePos - _startPos);
+        int endPos = _movePos + (_movePos - _startPos);
 
         //Double check we're still within the board bounds.
-        if (movePos > 34 || movePos < 0 || movePos == 8 || movePos == 17 || movePos == 26)
+        if (endPos > 34 || endPos < 0 || endPos == 8 || endPos == 17 || endPos == 26)
         {
             return false;
         }
 
-        //TODO: THIS IS MESSY AS FUCK
         //Final check, if the tile beyond the enemy is empty then they are capturable! But we have to check for further captures that are possible
-        if (_board.state[movePos] == TileState.Empty)
+        if (_board.state[endPos] == TileState.Empty)
         {
-            List<StoneMove> furtherMoves;
-            if (TestFurtherMoves(_board, new StoneMove(_startPos, movePos, true, _movePos), out furtherMoves)) _moves.AddRange(furtherMoves);
-            else _moves.Add(new StoneMove(_startPos, movePos, true, _movePos));
+            _captureFound = true;
+            if (_firstCap)
+            {
+                _moves.Clear();
+                _firstCap = false;
+            }
+            if (!TestFurtherMoves(_board,_owner, new StoneMove(_startPos, endPos, true, _movePos), ref _moves)) //furtherMoves)) _moves.AddRange(furtherMoves);
+                _moves.Add(new StoneMove(_startPos, endPos, true, _movePos));
+
             return true;
         }
 
@@ -177,28 +145,22 @@ public class AiBehaviour {
     }
 
     //Tests for any further captures that are possible and returns list of all further necessary captures.
-    static private bool TestFurtherMoves(Board _board, StoneMove _initialMove, out List<StoneMove> _foundMoves)
+    static private bool TestFurtherMoves(Board _board,int _activePlayer, StoneMove _initialMove, ref List<StoneMove> _foundMoves)
     {
-        
-        _foundMoves = new List<StoneMove>();
 
         Board tempBoard = _board.Clone();
         tempBoard.ResolveMove(_initialMove);
-
-        List<StoneMove> furtherMoves = new List<StoneMove>();
 
         int newPos = _initialMove.endPos;
 
         TileState state = tempBoard.state[newPos];
 
-        int currPlayer = tempBoard.GetOwner(newPos);
-        int enemyPlayer = 0;
+        int enemyPlayer;
 
-        if (currPlayer == 1) enemyPlayer = 2;
-        else                 enemyPlayer = 1;
+        if (_activePlayer == 1) enemyPlayer = 2;
+        else                    enemyPlayer = 1;
 
 
-        List<StoneMove> tempMoves = new List<StoneMove>();
         List<int> tempCaps = new List<int>();
         bool moveFound = false;
         int enemyPos,nextPos;
@@ -216,10 +178,10 @@ public class AiBehaviour {
                     tempCaps.Clear();
                     tempCaps.AddRange(_initialMove.capturedStones);
                     tempCaps.Add(enemyPos);
-                    if (TestFurtherMoves(_board, new StoneMove(_initialMove.startPos, nextPos, true, tempCaps), out furtherMoves))
-                        _foundMoves.AddRange(furtherMoves);
-                    else
-                        _foundMoves.Add(new StoneMove(_initialMove.startPos, nextPos, true, tempCaps));
+                    StoneMove newMove = new StoneMove(_initialMove.startPos, nextPos, true, tempCaps, state);
+
+                    if (!TestFurtherMoves(_board,_activePlayer, newMove, ref _foundMoves))
+                        _foundMoves.Add(newMove);
                 }
             }
 
@@ -235,20 +197,86 @@ public class AiBehaviour {
                     tempCaps.Clear();
                     tempCaps.AddRange(_initialMove.capturedStones);
                     tempCaps.Add(enemyPos);
-                    if (TestFurtherMoves(_board, new StoneMove(_initialMove.startPos, nextPos, true, tempCaps), out furtherMoves))   
-                        _foundMoves.AddRange(furtherMoves);
-                    else
-                        _foundMoves.Add(new StoneMove(_initialMove.startPos, nextPos, true, tempCaps));
+                    StoneMove newMove = new StoneMove(_initialMove.startPos, nextPos, true, tempCaps, state);
+
+                    if (!TestFurtherMoves(_board,_activePlayer, newMove, ref _foundMoves))   
+                        _foundMoves.Add(newMove);
                 }
             }
         }
 
         if (!moveFound)
         {
-            _foundMoves.Add(_initialMove);
             return false;
         }
         else
             return true;
+    }
+
+    static public float EvaluateBoardState(BoardNode _node, int _activePlayer)
+    {
+        float value = 0;
+
+        for (int i = 0; i < 35; i++)
+        {
+            int owner = _node.boardState.GetOwner(i);
+
+            if (owner == 0 || owner == -1) continue;
+
+            TileState state = _node.boardState.state[i];
+            //Increase value for each piece owned by the player, decrease for each owned by the opponent
+
+            float m = 1;
+
+            if (owner != _activePlayer) m = -1;
+
+            value += (1.1f * m);
+
+            if (state == TileState.BlackKing || state == TileState.WhiteKing)
+                value += (m * 1.2f);
+
+            if (i == 15 || i == 16 || i == 20 || i == 21)
+            {
+                value += m * 0.09f;
+            }
+
+            int opponent;
+            if (owner == 1) opponent = 2;
+            else opponent = 1;
+
+            for (int j = 4; j <= 5; j++)
+            {
+                if (state == TileState.BlackKing || state == TileState.BlackPiece || state == TileState.WhiteKing)
+                {
+                    int enemyPos = i + j;
+                    int nextPos = enemyPos + j;
+                    if (_node.boardState.GetOwner(enemyPos) == opponent && _node.boardState.GetOwner(nextPos) == 0)
+                    {
+                        value += m;
+                        List<StoneMove> foundMoves = new List<StoneMove>();
+
+                        TestFurtherMoves(_node.boardState, owner, new StoneMove(i, nextPos, true, enemyPos),ref foundMoves);
+                        value += foundMoves.Count;       
+                    }
+                }
+                if (state == TileState.BlackKing || state == TileState.WhitePiece || state == TileState.WhiteKing)
+                {
+                    int enemyPos = i - j;
+                    int nextPos = enemyPos - j;
+                    if (_node.boardState.GetOwner(enemyPos) == opponent && _node.boardState.GetOwner(nextPos) == 0)
+                    {
+                        value += m;
+                        List<StoneMove> foundMoves = new List<StoneMove>();
+
+                        TestFurtherMoves(_node.boardState, owner, new StoneMove(i, nextPos, true, enemyPos), ref foundMoves);
+                        value += foundMoves.Count;
+                    }
+                }
+            }
+        }
+
+        return value;
+
+
     }
 }

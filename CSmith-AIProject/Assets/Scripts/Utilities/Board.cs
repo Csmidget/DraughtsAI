@@ -65,7 +65,6 @@ public class Board {
     /// <param name="_boardState">board state to copy</param>
     public Board(TileState[] _boardState)
     {
-        //TODO: Test this, may not work
         state = (TileState[])_boardState.Clone();
     }
 
@@ -76,13 +75,17 @@ public class Board {
 
     public void ResolveMove(StoneMove _move)
     {
-        if (state[_move.startPos] == TileState.BlackPiece && _move.endPos < 4)
+        if (state[_move.startPos] == TileState.WhitePiece && _move.endPos < 4)
+        {
+            state[_move.startPos] = TileState.WhiteKing;
+        }
+        else if (state[_move.startPos] == TileState.BlackPiece && _move.endPos > 30)
         {
             state[_move.startPos] = TileState.BlackKing;
         }
-        else if (state[_move.startPos] == TileState.WhitePiece && _move.endPos > 30)
+        else if (_move.endState != TileState.Empty)
         {
-            state[_move.startPos] = TileState.WhiteKing;
+            state[_move.startPos] = _move.endState;
         }
 
         state[_move.endPos] = state[_move.startPos];
@@ -100,7 +103,7 @@ public class Board {
 
     public int GetOwner(int _pos)
     {
-        if (_pos > 34 || _pos < 0)
+        if (_pos > 34 || _pos < 0 || _pos == 8 || _pos == 17 || _pos == 26)
         {
             return -1;
         }

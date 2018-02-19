@@ -4,33 +4,23 @@ using UnityEngine;
 
 public class Search {
 
+    public static int iterations;
+
     static public float AlphaBeta(BoardNode _node, int _depth, float _alpha,float  _beta, bool _maximizingPlayer)
     {
         
-        //Generate heuristic
-        int whiteCount = _node.boardState.GetNumWhite();
-        int blackCount = _node.boardState.GetNumBlack();
-
+        iterations++;
+        
         int activePlayer = _node.GetActivePlayer();
 
-        float v = 0;
-
-        if (activePlayer == 1)
-        {
-            v = blackCount - whiteCount;
-        }
-        else
-            v = whiteCount - blackCount;
-
-
+        float v;
 
         if (_depth == 0 || _node.MoveCount() == 0)
         {
+            //Generate heuristic
+            v = AiBehaviour.EvaluateBoardState(_node, activePlayer);
             return v;
         }
-
-        if (activePlayer == 1) activePlayer = 2;
-        else activePlayer = 1;
 
         if (_maximizingPlayer)
         {
@@ -39,6 +29,10 @@ public class Search {
             {
                 Board testBoard = _node.boardState.Clone();
                 testBoard.ResolveMove(b);
+
+                if (activePlayer == 1) activePlayer = 2;
+                else activePlayer = 1;
+
                 v = Mathf.Max(v, AlphaBeta(new BoardNode(testBoard,activePlayer), _depth - 1, _alpha, _beta, false));
                 _alpha = Mathf.Max(_alpha, v);
                 if (_beta <= _alpha)
@@ -53,6 +47,10 @@ public class Search {
             {
                 Board testBoard = _node.boardState.Clone();
                 testBoard.ResolveMove(b);
+
+                if (activePlayer == 1) activePlayer = 2;
+                else activePlayer = 1;
+
                 v = Mathf.Min(v, AlphaBeta(new BoardNode(testBoard, activePlayer), _depth - 1, _alpha, _beta, true));
                 _beta = Mathf.Min(_beta, v);
                 if (_beta <= _alpha)

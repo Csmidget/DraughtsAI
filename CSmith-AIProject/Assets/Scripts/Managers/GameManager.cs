@@ -97,6 +97,12 @@ public class GameManager : MonoBehaviour {
         return model.GetActivePlayer();
     }
 
+    public PlayerType GetActivePlayerType()
+    {
+        if (model.GetActivePlayer() == 1) return player1;
+        else return player2;
+    }
+
     public Board GetBoardState()
     {
         return model.GetBoardState();

@@ -90,7 +90,6 @@ public class BoardManager : MonoBehaviour {
                 }
         }
         displayedBoard = newBoard;
-        Debug.Log("UPDATE BOARD");
     }
 
     GameObject SetTile(int _tilePos,TileState _newState)
@@ -159,18 +158,22 @@ public class BoardManager : MonoBehaviour {
         validMoves = gameManager.GetAllValidMoves();
         List<int> placedOverlays = new List<int>();
 
-        foreach (StoneMove sm in validMoves)
+        if (gameManager.GetActivePlayerType() == PlayerType.Human)
         {
-            if (!placedOverlays.Contains(sm.startPos))
+            foreach (StoneMove sm in validMoves)
             {
-                movableStoneOverlays.Add(AddTileOverlay(sm.startPos, "blue"));
-                placedOverlays.Add(sm.startPos);
+                if (!placedOverlays.Contains(sm.startPos))
+                {
+                    movableStoneOverlays.Add(AddTileOverlay(sm.startPos, "blue"));
+                    placedOverlays.Add(sm.startPos);
+                }
             }
         }
     }
 
     public void StonePicked(GameObject _stoneGO)
     {
+
         for (int i = 0; i < 35; i++)
         {
                 if (visualBoard[i] == _stoneGO)
@@ -221,7 +224,6 @@ public class BoardManager : MonoBehaviour {
             convertedPos -= mod;
 
         }
-        Debug.Log(convertedPos);
 
         //TODO: Maybe combine these IF blocks? Test if they are always == in size.
         for (int i = 0; i < activeMoves.Count; i++)
