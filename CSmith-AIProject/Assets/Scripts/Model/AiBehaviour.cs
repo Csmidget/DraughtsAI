@@ -1,21 +1,34 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
+using System.Linq;
 using System.Threading;
 
 public class AiBehaviour {
 
 
-    static public bool PerformTurn(Board _currentBoard, int _aiPlayer, out StoneMove _move)
+    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,bool _firstTurn, out StoneMove _move)
     {
  
         Search.iterations = 0;
         _move = new StoneMove();
+
         List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer);
+
+        System.Random rnd = new System.Random();
+        IEnumerable<StoneMove> shuffledList = possibleMoves.OrderBy(item => rnd.Next());
+
         UnityEngine.Debug.Log("Valid Moves:" + possibleMoves.Count);
         if (possibleMoves.Count > 0)
         {
+
+            if (_firstTurn)
+            {
+                _move = shuffledList.First();
+                return true;
+            }
+
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
@@ -23,11 +36,11 @@ public class AiBehaviour {
             float selectedMoveValue = -Mathf.Infinity;
             if (possibleMoves.Count > 1)
             {
-                foreach (StoneMove m in possibleMoves)
+                foreach (StoneMove m in shuffledList)
                 {
                     Board testBoard = _currentBoard.Clone();
                     testBoard.ResolveMove(m);
-                    float moveValue = Search.AlphaBeta(new BoardNode(testBoard, _aiPlayer), 10, -Mathf.Infinity, Mathf.Infinity, true);
+                    float moveValue = Search.AlphaBeta(new BoardNode(testBoard, _aiPlayer), 9, -Mathf.Infinity, Mathf.Infinity, true);
 
                     if (moveValue > selectedMoveValue)
                     {
@@ -279,4 +292,5 @@ public class AiBehaviour {
 
 
     }
+
 }

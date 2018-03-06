@@ -15,12 +15,15 @@ public class Search {
 
         float v;
 
+        if (CheckersMain.prevStates.Contains(_node.boardState)) return -Mathf.Infinity;
+
         if (_depth == 0 || _node.MoveCount() == 0)
         {
             //Generate heuristic
             v = AiBehaviour.EvaluateBoardState(_node, activePlayer);
             return v;
         }
+
 
         if (_maximizingPlayer)
         {

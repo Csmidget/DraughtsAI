@@ -20,11 +20,13 @@ public class CheckersMain{
     /// Ordered list of all boardstates prior to this one. All completed games are saved.
     /// TODO: Maybe optimise by storing only moves made instead of entire board state after every move.
     /// </summary>
-    private List<Board> prevStates;
+    static public List<Board> prevStates;
 
     private Board cachedBoardState;
 
     private int aiTurnDelay;
+
+    private bool firstTurn;
 
     /// <summary>
     /// The current board state.
@@ -41,6 +43,8 @@ public class CheckersMain{
     /// Set to true when a turn has been completed. Tells the model to process the next turn.
     /// </summary>
     private bool turnComplete;
+
+    //static public Board lastState;
 
     /// <summary>
     /// Constructor. Initialises lists. Sets up events.
@@ -65,6 +69,8 @@ public class CheckersMain{
         prevStates = new List<Board>();
         validMoves = new List<StoneMove>();
 
+        firstTurn = true;
+
         //initialise board (This will generate a board with initial game setup by default)
         boardState = new Board();
         cachedBoardState = boardState.Clone();
@@ -86,6 +92,7 @@ public class CheckersMain{
     {
         if (turnComplete)
         {
+            firstTurn = false;
             turnComplete = false;
 
             //Switch active player
@@ -113,7 +120,7 @@ public class CheckersMain{
             else
             {
                 StoneMove chosenMove = new StoneMove();
-                if (AiBehaviour.PerformTurn(boardState, activePlayer, out chosenMove))
+                if (AiBehaviour.PerformTurn(boardState, activePlayer,firstTurn, out chosenMove))
                 {
                     boardState.ResolveMove(chosenMove);
                     turnComplete = true;
@@ -122,7 +129,9 @@ public class CheckersMain{
                 else
                 {
                     Debug.Log("No possible moves found for AI");
-                    turnComplete = true;
+                    if (activePlayer == 1) winner = 2;
+                    else winner = 1;
+                    EventManager.TriggerEvent("gameOver");
                 }
             }
         }
