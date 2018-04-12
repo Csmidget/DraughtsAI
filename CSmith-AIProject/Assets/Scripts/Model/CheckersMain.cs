@@ -51,11 +51,6 @@ public class CheckersMain{
     /// </summary>
     public CheckersMain(PlayerType _p1Type, PlayerType _p2Type)
     {    
-        EventManager.CreateEvent("turnOver");
-        EventManager.CreateEvent("gameReset");
-        EventManager.CreateEvent("gameOver");
-        EventManager.CreateEvent("boardUpdated");
-
         p1Type = _p1Type;
         p2Type = _p2Type;
     }
@@ -80,7 +75,6 @@ public class CheckersMain{
         validMoves = GenerateValidMoveList(boardState, activePlayer);
         
         EventManager.TriggerEvent("gameReset");
-        
         return true;
     }
 
@@ -96,10 +90,7 @@ public class CheckersMain{
             turnComplete = false;
 
             //Switch active player
-            if (activePlayer == 1)
-                activePlayer = 2;
-            else
-                activePlayer = 1;
+            activePlayer = 3 - activePlayer;
 
             if ((activePlayer == 1 && p1Type == PlayerType.Human) || (activePlayer == 2 && p2Type == PlayerType.Human))
             {
@@ -115,12 +106,14 @@ public class CheckersMain{
 
         if ((activePlayer == 1 && p1Type == PlayerType.AI) || (activePlayer == 2 && p2Type == PlayerType.AI))
         {
+            NeuralNetwork net = new NeuralNetwork();
             if (aiTurnDelay > 0)
                 aiTurnDelay -= 1;
             else
             {
                 StoneMove chosenMove = new StoneMove();
-                if (AiBehaviour.PerformTurn(boardState, activePlayer,firstTurn, out chosenMove))
+                
+                if (AiBehaviour.PerformTurn(boardState, activePlayer,firstTurn, out chosenMove,ref net))
                 {
                     boardState.ResolveMove(chosenMove);
                     turnComplete = true;
@@ -129,11 +122,12 @@ public class CheckersMain{
                 else
                 {
                     Debug.Log("No possible moves found for AI");
-                    if (activePlayer == 1) winner = 2;
-                    else winner = 1;
+                    winner = 3 - activePlayer;
                     EventManager.TriggerEvent("gameOver");
                 }
             }
+
+            AiBehaviour.PrintCurrentBoardFeatures(new BoardNode(boardState, 3 - activePlayer), 3 - activePlayer,ref net);
         }
 
 

@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour {
     private static GameManager activeManager;
 
     private CheckersMain model;
+    private Train trainingModel;
 
     /// <summary>
     /// Define player 1's player type. This will control how this players turn is executed.
@@ -21,6 +22,9 @@ public class GameManager : MonoBehaviour {
     /// </summary>
     [SerializeField]
     private PlayerType player2;
+
+    bool gameActive;
+    public bool training = false;
 
     void Awake()
     {
@@ -36,8 +40,14 @@ public class GameManager : MonoBehaviour {
 
         EventManager.Init();
 
+        EventManager.CreateEvent("turnOver");
+        EventManager.CreateEvent("gameReset");
+        EventManager.CreateEvent("gameOver");
+        EventManager.CreateEvent("boardUpdated");
+
         //Create Model. Done in awake to allow other managers to register for events within OnEnable/Start
         model = new CheckersMain(player1, player2) ;
+        trainingModel = new Train();
     }
 
 	void Start ()
@@ -46,12 +56,21 @@ public class GameManager : MonoBehaviour {
         EventManager.RegisterToEvent("turnOver", TurnOver);
         EventManager.RegisterToEvent("gameReset", GameReset);
 
-        model.Init();        
+        if (!training)
+            model.Init();
+        else
+            trainingModel.Init();
 	}
 	
 	void Update ()
     {
-        model.Update();
+        if (gameActive)
+        {
+            if (!training)
+                model.Update();
+            else
+                trainingModel.Update();
+        }
 	}
 
     void OnDestroy()
@@ -80,61 +99,135 @@ public class GameManager : MonoBehaviour {
     }
 
     /// <summary>
-    /// Returns the model attached to this GameManager
-    /// </summary>
-    /// <returns></returns>
-    public CheckersMain GetModel()
-    {
-        return model;
-    }
-
-    /// <summary>
     /// Returns the currently active player.
     /// </summary>
     /// <returns></returns>
     public int GetActivePlayer()
     {
-        return model.GetActivePlayer();
+        if (!training)
+            return model.GetActivePlayer();
+        else
+            return trainingModel.GetActivePlayer();
     }
 
     public PlayerType GetActivePlayerType()
     {
-        if (model.GetActivePlayer() == 1) return player1;
-        else return player2;
+        if (!training)
+        {
+            if (model.GetActivePlayer() == 1) return player1;
+            else return player2;
+        }
+        else
+        {
+            return PlayerType.AI;
+        }
     }
 
     public Board GetBoardState()
     {
-        return model.GetBoardState();
+        if (!training)
+            return model.GetBoardState();
+        else
+            return trainingModel.GetBoardState();
     }
 
     public List<StoneMove> GetValidMoves(int _startPos)
     {
-        return model.GetValidMoves(_startPos);
+        if (!training)
+            return model.GetValidMoves(_startPos);
+        else
+            return new List<StoneMove>();
     }
 
     public void AttemptMove(StoneMove _move)
     {
-        model.AttemptMove(_move);
+        if (!training)
+            model.AttemptMove(_move);
     }
 
     public List<StoneMove> GetAllValidMoves()
     {
-        return model.GetAllValidMoves();
+        if (!training)
+            return model.GetAllValidMoves();
+        else
+            return trainingModel.GetAllValidMoves();
     }
 
     public int GetWinner()
     {
-        return model.GetWinner();
+        if (!training)
+            return model.GetWinner();
+        else
+            return 1;
     }
 
     public void NewGame()
     {
-        model.Init();
+        if (!training)
+            model.Init();
+        else
+            trainingModel.Init();
     }
 
     public void Quit()
     {
         Application.Quit();
+    }
+
+    public int GetTrainingWins()
+    {
+        if (training)
+            return trainingModel.GetTrainingWins();
+        else
+            return 0;
+    }
+    public int GetControlWins()
+    {
+        if (training)
+            return trainingModel.GetControlWins();
+        else
+            return 0;
+    }
+    public int GetTotalTrainingWins()
+    {
+        if (training)
+            return trainingModel.GetTotalTrainingWins();
+        else
+            return 0;
+    }
+    public int GetTotalControlWins()
+    {
+        if (training)
+            return trainingModel.GetTotalControlWins();
+        else
+            return 0;
+    }
+    public int GetGamesComplete()
+    {
+        if (training)
+            return trainingModel.GetGamesComplete();
+        else
+            return 0;
+    }
+    public int GetCurrentTrainingSide()
+    {
+        if (training)
+            return trainingModel.GetCurrentTrainingSide();
+        else
+            return 0;
+    }
+
+    public int GetControlUpdates()
+    {
+        if (training)
+            return trainingModel.GetControlUpdates();
+        else
+            return 0;
+    }
+
+    public void InitTrainingGame(double alpha,double lambda,int maxIterations,string nnFileName)
+    {
+        trainingModel.Init(alpha, lambda, maxIterations, nnFileName);
+        gameActive = true;
     }
 }

@@ -31,9 +31,12 @@ public class BoardManager : MonoBehaviour {
     [SerializeField]
     private GameObject tileOverlayBlue;
 
+    bool boardSetup;
+
 
     private void Awake()
     {
+        boardSetup = false;
         //Destroy this GameManager if one already exists.
         if (activeManager != null)
         {
@@ -42,11 +45,7 @@ public class BoardManager : MonoBehaviour {
             return;
         }
         //set static reference to manager to this manager.
-        activeManager = this;
-
-        EventManager.RegisterToEvent("gameReset", SetupBoard);
-        EventManager.RegisterToEvent("boardUpdated", UpdateBoard);
-        EventManager.RegisterToEvent("turnOver", SpawnMovableStoneOverlays);
+        activeManager = this;     
 
         visualBoard = new GameObject[35];
         moveOverlays = new List<GameObject>();
@@ -56,16 +55,21 @@ public class BoardManager : MonoBehaviour {
 
     void OnEnable()
     {
-        gameManager = GameManager.GetActive();
+       
     }
 
+    private void Start()
+    {
+        gameManager = GameManager.GetActive();
+        EventManager.RegisterToEvent("gameReset", SetupBoard);
+        EventManager.RegisterToEvent("boardUpdated", UpdateBoard);
+        EventManager.RegisterToEvent("turnOver", SpawnMovableStoneOverlays);
+    }
 
 
     void SetupBoard()
     {
-
         displayedBoard = gameManager.GetBoardState();
-        Debug.Log(displayedBoard);
         for (int i = 0; i < 35; i++)
         {
 
@@ -73,14 +77,15 @@ public class BoardManager : MonoBehaviour {
 
                 visualBoard[i] = SetTile(i, t);
         }
-
+     
         SpawnMovableStoneOverlays();
+        boardSetup = true;
     }
 
     void UpdateBoard()
     {
         SpawnMovableStoneOverlays();
-
+        if (!boardSetup) SetupBoard();
         Board newBoard = gameManager.GetBoardState();
         for (int i = 0; i < 35; i++)
         {

@@ -95,7 +95,6 @@ public class Board {
         {
             foreach (int pos in _move.capturedStones)
             {
-                TileState cappedStone = state[pos];
                 state[pos] = TileState.Empty;
             }
         }
@@ -113,6 +112,14 @@ public class Board {
             return 2;
         else
             return 0;
+    }
+
+    public int PieceCount(int player)
+    {
+        if (player == 1)
+            return GetNumBlack();
+        else
+            return GetNumWhite();
     }
 
     public int GetNumBlack()
@@ -140,5 +147,111 @@ public class Board {
 
         }
         return count;
+    }
+
+    //Returns number of stones NOT KINGS
+    public int GetNumWhiteStones()
+    {
+        int count = 0;
+        for (int i = 0; i < 34; i++)
+        {
+            if (i == 8 || i == 17 || i == 26) continue;
+
+            if (state[i] == TileState.WhitePiece)
+                count++;
+
+        }
+        return count;
+    }
+
+    public int GetNumBlackStones()
+    {
+        int count = 0;
+        for (int i = 0; i < 34; i++)
+        {
+            if (i == 8 || i == 17 || i == 26) continue;
+
+            if (state[i] == TileState.BlackPiece)
+                count++;
+
+        }
+        return count;
+    }
+
+    public int GetNumWhiteKings()
+    {
+        int count = 0;
+        for (int i = 0; i < 34; i++)
+        {
+            if (i == 8 || i == 17 || i == 26) continue;
+
+            if (state[i] == TileState.WhiteKing)
+                count++;
+
+        }
+        return count;
+    }
+
+    public int GetNumBlackKings()
+    {
+
+        int count = 0;
+        for (int i = 0; i < 34; i++)
+        {
+            if (i == 8 || i == 17 || i == 26) continue;
+
+            if (state[i] == TileState.BlackKing)
+                count++;
+
+        }
+        return count;
+
+    }
+
+
+
+    public int[] ToIntArray()
+    {
+        int[] returnArr = new int[35];
+        for (int i = 0; i < 35; i++)
+        {
+            returnArr[i] = (int)state[i];
+        }
+        return returnArr;
+    }
+
+    public static bool operator== (Board a, Board b)
+    {
+       // if ((object)a == null || (object)b == null)
+       // {
+       //     if ((object)a == null && (object)b == null)
+       //         return true;
+       //     else
+       //         return false;
+       //
+       // }
+
+
+        for (int i = 0; i < 35; i++)
+        {
+            if (a.state[i] != b.state[i])
+            {
+                return false;
+            }
+        }
+        return true;
+             
+    }
+
+    public static bool operator!= (Board a, Board b)
+    {
+        for (int i = 0; i < 35; i++)
+        {
+            if (a.state[i] != b.state[i])
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

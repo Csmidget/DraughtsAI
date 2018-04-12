@@ -6,37 +6,34 @@ public class Search {
 
     public static int iterations;
 
-    static public float AlphaBeta(BoardNode _node, int _depth, float _alpha,float  _beta, bool _maximizingPlayer)
+    static public float AlphaBeta(BoardNode _node, int _depth, float _alpha,float  _beta, bool _maximizingPlayer, ref NeuralNetwork net)
     {
-        
         iterations++;
-        
-        int activePlayer = _node.GetActivePlayer();
 
         float v;
-
-        if (CheckersMain.prevStates.Contains(_node.boardState)) return -Mathf.Infinity;
+        int activePlayer = _node.GetActivePlayer();
+     
 
         if (_depth == 0 || _node.MoveCount() == 0)
         {
-            //Generate heuristic
-            v = AiBehaviour.EvaluateBoardState(_node, activePlayer);
+            FFData data;
+            if (_maximizingPlayer)
+            v = AiBehaviour.GetBoardRating(_node, activePlayer,out data, ref net);
+            else
+            v = AiBehaviour.GetBoardRating(_node,3 - activePlayer, out data, ref net);
+
             return v;
         }
-
-
         if (_maximizingPlayer)
         {
+
             v = -Mathf.Infinity;
             foreach (StoneMove b in _node.GetMoveList())
             {
                 Board testBoard = _node.boardState.Clone();
                 testBoard.ResolveMove(b);
 
-                if (activePlayer == 1) activePlayer = 2;
-                else activePlayer = 1;
-
-                v = Mathf.Max(v, AlphaBeta(new BoardNode(testBoard,activePlayer), _depth - 1, _alpha, _beta, false));
+                v = Mathf.Max(v, AlphaBeta(new BoardNode(testBoard,3 - activePlayer), _depth - 1, _alpha, _beta, false,ref net));
                 _alpha = Mathf.Max(_alpha, v);
                 if (_beta <= _alpha)
                     break;
@@ -51,10 +48,7 @@ public class Search {
                 Board testBoard = _node.boardState.Clone();
                 testBoard.ResolveMove(b);
 
-                if (activePlayer == 1) activePlayer = 2;
-                else activePlayer = 1;
-
-                v = Mathf.Min(v, AlphaBeta(new BoardNode(testBoard, activePlayer), _depth - 1, _alpha, _beta, true));
+                v = Mathf.Min(v, AlphaBeta(new BoardNode(testBoard,3 - activePlayer), _depth - 1, _alpha, _beta, true,ref net));
                 _beta = Mathf.Min(_beta, v);
                 if (_beta <= _alpha)
                     break;
