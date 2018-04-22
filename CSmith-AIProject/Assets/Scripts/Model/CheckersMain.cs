@@ -9,13 +9,23 @@ using UnityEngine.Events;
 /// </summary>
 public class CheckersMain
 {
-
     PlayerType p1Type, p2Type;
+
+    public bool gameActive;
 
     private NeuralNetwork p1NeuralNetwork;
     private NeuralNetwork p2NeuralNetwork;
     private int p1SearchDepth = 6;
     private int p2SearchDepth = 6;
+
+    //Tournament variables
+    private bool tournament = false;
+    int maxGames = 15;
+    int p1Wins = 0;
+    int p2Wins = 0;
+    //end of Tournament variables
+
+    private int gamesComplete = 0;
 
     //Training variables
     NeuralNetwork netBackup;
@@ -24,7 +34,6 @@ public class CheckersMain
     private int maxIterations = 1000;
     private int gamesPerCheck = 20;
 
-    private int gamesComplete = 0;
     private int trainingWins = 0;
     private int controlWins = 0;
     private int controlUpdates = 0;
@@ -54,9 +63,11 @@ public class CheckersMain
 
     private float aiTurnDelay;
 
+    //True for first full turn of the game (2 Plys) used to randomize first move and to delay backprop whilst there is insufficient data
     private bool firstTurn;
     private bool matchOver;
 
+    //True if no moves were found when attempting to perform AI move.
     private bool noMovesFound;
 
     /// <summary>
@@ -92,8 +103,9 @@ public class CheckersMain
     /// Generates initial board state and prepares for new game.
     /// </summary>
     /// <returns></returns>
-    public bool InitNormal(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName)
+    public bool InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName)
     {
+        tournament = true;
         p1Type = _p1Type;
         p2Type = _p2Type;
         p1SearchDepth = _p1SearchDepth;
@@ -122,6 +134,7 @@ public class CheckersMain
         validMoves = GenerateValidMoveList(boardState, activeSide);
 
         EventManager.TriggerEvent("boardUpdated");
+        EventManager.TriggerEvent("gameReset");
         return true;
     }
 
@@ -139,6 +152,7 @@ public class CheckersMain
         p1Side = 1;
         netBackup = p1NeuralNetwork.Copy();
         turnComplete = false;
+        EventManager.TriggerEvent("gameReset");
     }
 
     public void InitNewGame()
@@ -168,7 +182,6 @@ public class CheckersMain
 
         EventManager.TriggerEvent("gameReset");
     }
-
 
     /// <summary>
     /// Called from Game Manager, central update function of internal model.
@@ -201,6 +214,10 @@ public class CheckersMain
                 if (training && winner != 0)
                 {
                     UpdateTraining();
+                }
+                else if (tournament && winner != 0)
+                {
+                    UpdateTournament();
                 }
                 EventManager.TriggerEvent("gameOver");
                 InitNewGame();
@@ -275,7 +292,34 @@ public class CheckersMain
         }
         if (gamesComplete == maxIterations)
         {
+            gameActive = false;
+            EventManager.TriggerEvent("trainingComplete");
+            System.DateTime sn = System.DateTime.Now;
+                p1NeuralNetwork.SaveToFile("NetWeights\\" + sn.ToShortDateString().Replace('/', '-').Trim(' ') + '-' + sn.ToShortTimeString().Replace(':', '-') + "_TrainingEnd");
             training = false;
+        }
+    }
+
+    void UpdateTournament()
+    {
+        if (p1Side == winner)
+        {
+            p1Wins++;         
+        }
+        else if (3 - p1Side == winner)
+        {
+            p2Wins++;
+        }
+        else
+            return;
+
+        gamesComplete++;
+        p1Side = 3 - p1Side;
+
+        if (p1Wins == 8 || p2Wins == 8)
+        {
+            gameActive = false;
+            EventManager.TriggerEvent("tournamentComplete");
         }
     }
 
@@ -607,6 +651,7 @@ public class CheckersMain
     {
         return controlWins;
     }
+
     public int GetTotalTrainingWins()
     {
         return totalTrainingWins;
@@ -623,6 +668,19 @@ public class CheckersMain
     public int GetControlUpdates()
     {
         return controlUpdates;
+    }
+    public int GetP1Wins()
+    {
+        return p1Wins;
+    }
+    public int GetP2Wins()
+    {
+        return p2Wins;
+    }
+
+    public int GetP1Side()
+    {
+        return p1Side;
     }
 
     public void Destroy()

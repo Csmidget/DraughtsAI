@@ -22,8 +22,9 @@ public class GameManager : MonoBehaviour {
     [SerializeField]
     private PlayerType player2;
 
-    private bool gameActive;
+
     private bool training = false;
+    private bool tournament = false;
 
     void Awake()
     {
@@ -43,16 +44,13 @@ public class GameManager : MonoBehaviour {
         EventManager.CreateEvent("gameReset");
         EventManager.CreateEvent("gameOver");
         EventManager.CreateEvent("boardUpdated");
+        EventManager.CreateEvent("trainingComplete");
+        EventManager.CreateEvent("tournamentComplete");
     }
-
-	void Start ()
-    {
-
-	}
 	
 	void Update ()
     {
-        if (gameActive)
+        if (model.gameActive)
         {
             model.Update();
         }
@@ -160,14 +158,30 @@ public class GameManager : MonoBehaviour {
         return training;
     }
 
-    public void InitNormalGame(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName)
+    public bool IsTournament()
+    {
+        return tournament;
+    }
+
+    public PlayerType GetP1Type()
+    {
+        return player1;
+    }
+
+    public PlayerType GetP2Type()
+    {
+        return player2;
+    }
+
+    public void InitTournamentGame(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName)
     {
         model = new CheckersMain(PlayerType.AI, PlayerType.AI);
         player1 = _p1Type;
         player2 = _p2Type;
         training = false;
-        model.InitNormal(_p1Type,_p2Type, _p1SearchDepth, _p2SearchDepth,  _p1nnFileName,  _p2nnFileName);
-        gameActive = true;
+        tournament = true;
+        model.InitTournament(_p1Type,_p2Type, _p1SearchDepth, _p2SearchDepth,  _p1nnFileName,  _p2nnFileName);
+        model.gameActive = true;
     }
 
     public void InitTrainingGame(double _alpha,double _lambda,int _maxIterations,string _nnFileName,int _searchDepth)
@@ -176,7 +190,22 @@ public class GameManager : MonoBehaviour {
         player1 = PlayerType.AI;
         player2 = PlayerType.AI;
         training = true;
+        tournament = false;
         model.InitTraining(_alpha, _lambda, _maxIterations, _nnFileName, _searchDepth);
-        gameActive = true;
+        model.gameActive = true;
+    }
+
+    public int GetP1Wins()
+    {
+        return model.GetP1Wins();
+    }
+    public int GetP2Wins()
+    {
+        return model.GetP2Wins();
+    }
+
+    public int GetP1Side()
+    {
+        return model.GetP1Side();
     }
 }

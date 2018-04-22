@@ -39,7 +39,7 @@ public class TrainingData : MonoBehaviour {
             gameObject.SetActive(true);
 	}
 
-    private void UpdateValues()
+    void UpdateValues()
     {
         if (activeManager.GetCurrentTrainingSide() == 1)
             currentTrainingSide = "Black";

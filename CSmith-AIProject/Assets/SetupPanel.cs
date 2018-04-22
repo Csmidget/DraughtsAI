@@ -20,7 +20,12 @@ public class SetupPanel : MonoBehaviour {
 
     private void Start()
     {
+        EventManager.RegisterToEvent("trainingComplete", Reactivate);
+    }
 
+    private void Reactivate()
+    {
+        gameObject.SetActive(true);
     }
 
     public void BeginGame()

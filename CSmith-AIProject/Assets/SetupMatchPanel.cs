@@ -23,8 +23,17 @@ public class SetupMatchPanel : MonoBehaviour {
     [SerializeField]
     Text p2nnFileName;
 
+    public void Start()
+    {
+        EventManager.RegisterToEvent("tournamentComplete", Reactivate);
+    }
 
-	public void BeginGame()
+    public void Reactivate()
+    {
+        gameObject.SetActive(true);
+    }
+
+    public void BeginGame()
     {
         PlayerType p1TypeVal;
         PlayerType p2TypeVal;
@@ -54,7 +63,7 @@ public class SetupMatchPanel : MonoBehaviour {
             }
         }
 
-        GameManager.GetActive().InitNormalGame(p1TypeVal, p2TypeVal, p1SearchDepthVal, p2SearchDepthVal, p1nnFileName.text, p2nnFileName.text);
+        GameManager.GetActive().InitTournamentGame(p1TypeVal, p2TypeVal, p1SearchDepthVal, p2SearchDepthVal, p1nnFileName.text, p2nnFileName.text);
         gameObject.SetActive(false);
     }
 
