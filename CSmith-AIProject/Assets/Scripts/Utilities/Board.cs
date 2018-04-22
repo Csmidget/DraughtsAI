@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum TileState {Empty=0,WhitePiece=1,BlackPiece=2,WhiteKing=3,BlackKing=4 }
+public enum TileState:int {Empty=0,WhitePiece=1,BlackPiece=2,WhiteKing=3,BlackKing=4 }
 
 
 /// <summary>
@@ -114,7 +114,7 @@ public class Board {
             return 0;
     }
 
-    public int PieceCount(int player)
+    public int GetPieceCount(int player)
     {
         if (player == 1)
             return GetNumBlack();

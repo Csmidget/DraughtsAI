@@ -18,7 +18,7 @@ public class turnTracker : MonoBehaviour {
 
 	void SetTracker () {
 
-		if (gameManager.GetActivePlayer() == 1)
+		if (gameManager.GetActiveSide() == 1)
         {
             text.text = "Black's Turn";
         }

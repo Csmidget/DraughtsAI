@@ -26,7 +26,7 @@ public class Stone : MonoBehaviour {
 
     void OnMouseDown()
     {
-        if (GameManager.GetActive().GetActivePlayer() == owner)
+        if (GameManager.GetActive().GetActiveSide() == owner)
         {
             mouseDown = true;
             lastMousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);

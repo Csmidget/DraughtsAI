@@ -20,10 +20,11 @@ public class TrainingData : MonoBehaviour {
     void Start()
     {
         activeManager = GameManager.GetActive();
+        EventManager.RegisterToEvent("gameOver", RunUpdate);
     }
 
     // Update is called once per frame
-    void Update () {
+    void RunUpdate () {
         if (activeManager.GetGamesComplete() != gamesComplete ||
             activeManager.GetTotalTrainingWins() != totalTrainingWins ||
             activeManager.GetTotalControlWins() != totalControlWins ||
@@ -31,6 +32,11 @@ public class TrainingData : MonoBehaviour {
             activeManager.GetControlWins() != controlWins ||
             activeManager.GetControlUpdates() != controlUpdates)
             UpdateValues();
+
+        if (!activeManager.IsTraining() && gameObject.activeSelf == true)
+            gameObject.SetActive(false);
+        else if (gameObject.activeSelf == false)
+            gameObject.SetActive(true);
 	}
 
     private void UpdateValues()

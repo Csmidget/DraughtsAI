@@ -7,8 +7,8 @@ using MathNet.Numerics.LinearAlgebra.Double;
 
 public class NeuralNetwork{
 
-    public const int inputLayerSize = 12;
-    public const int hiddenLayerSize = 24;
+    public const int inputLayerSize = 15;
+    public const int hiddenLayerSize = 48;
     public const double init_epsilon = 0.1;
 
     double[,] theta1Arr;
