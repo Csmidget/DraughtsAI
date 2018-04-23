@@ -125,7 +125,7 @@ public class Board {
     public int GetNumBlack()
     {
         int count = 0;
-        for (int i = 0; i < 34; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if (i == 8 || i == 17 || i == 26) continue;
 
@@ -138,7 +138,7 @@ public class Board {
     public int GetNumWhite()
     {
         int count = 0;
-        for (int i = 0; i < 34; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if(i == 8 || i == 17 || i == 26) continue;
 
@@ -153,7 +153,7 @@ public class Board {
     public int GetNumWhiteStones()
     {
         int count = 0;
-        for (int i = 0; i < 34; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if (i == 8 || i == 17 || i == 26) continue;
 
@@ -167,7 +167,7 @@ public class Board {
     public int GetNumBlackStones()
     {
         int count = 0;
-        for (int i = 0; i < 34; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if (i == 8 || i == 17 || i == 26) continue;
 
@@ -181,7 +181,7 @@ public class Board {
     public int GetNumWhiteKings()
     {
         int count = 0;
-        for (int i = 0; i < 34; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if (i == 8 || i == 17 || i == 26) continue;
 
@@ -196,7 +196,7 @@ public class Board {
     {
 
         int count = 0;
-        for (int i = 0; i < 34; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if (i == 8 || i == 17 || i == 26) continue;
 
@@ -208,12 +208,53 @@ public class Board {
 
     }
 
+    public int GetCapThreats(int _activePlayer)
+    {
+        int ret = 0;
+        List<StoneMove> foundMoves = AiBehaviour.FindAllValidMoves(this, _activePlayer);
+        foreach (StoneMove s in foundMoves)
+        {
+            if (s.stoneCaptured)
+                ret += s.capturedStones.Count;
+
+            Board newBoard = Clone();
+            newBoard.ResolveMove(s);
+            List<StoneMove> enemyMoves = AiBehaviour.FindAllValidMoves(newBoard, 3 - _activePlayer);
+            bool capped = false;
+            foreach (StoneMove s2 in enemyMoves)
+            {
+                if (s2.stoneCaptured && s2.capturedStones.Contains(s.endPos))
+                {
+                    capped = true;
+                }
+            }
+
+            if (!capped)
+            {
+                bool furtherCapFound = false;
+                bool firstCap = true;
+                List<StoneMove> furtherMoves = new List<StoneMove>();
+                AiBehaviour.FindValidMoves(newBoard, s.endPos, ref furtherCapFound, ref firstCap, ref furtherMoves);
+
+                if (furtherCapFound)
+                {
+                    foreach (StoneMove s2 in furtherMoves)
+                    {
+                        if (s2.stoneCaptured)
+                            ret += s2.capturedStones.Count;
+                    }
+                }
+            }
+
+        }
+        return ret;
+    }
 
 
     public int[] ToIntArray()
     {
         int[] returnArr = new int[35];
-        for (int i = 0; i < 35; i++)
+        for (int i = 0; i <= 34; i++)
         {
             returnArr[i] = (int)state[i];
         }
@@ -232,7 +273,7 @@ public class Board {
        // }
 
 
-        for (int i = 0; i < 35; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if (a.state[i] != b.state[i])
             {
@@ -245,7 +286,7 @@ public class Board {
 
     public static bool operator!= (Board a, Board b)
     {
-        for (int i = 0; i < 35; i++)
+        for (int i = 0; i <= 34; i++)
         {
             if (a.state[i] != b.state[i])
             {

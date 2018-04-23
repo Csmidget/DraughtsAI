@@ -211,6 +211,7 @@ public class CheckersMain
             }
             else
             {
+                Debug.Log("MATCH OVER");
                 if (training && winner != 0)
                 {
                     UpdateTraining();
@@ -329,15 +330,13 @@ public class CheckersMain
         NeuralNetwork net;
         int searchDepth;
 
-
-
         if (activeSide == p1Side)
         {
             net = p1NeuralNetwork;
             searchDepth = p1SearchDepth;
             if (training)
             {
-                AiBehaviour.GetBoardRating(new BoardNode(boardState, activeSide), activeSide, out currRun, ref p1NeuralNetwork);
+                AiBehaviour.GetBoardRating(boardState, activeSide, out currRun, ref p1NeuralNetwork);
                 prevRuns.Add(currRun.Clone());
                 Debug.Log("current board rating:" + currRun.a3[0, 0]);
             }
@@ -371,15 +370,14 @@ public class CheckersMain
             matchOver = true;
             winner = 3 - activeSide;
         }
+        else if (turnCount == maxTurnCount)
+        {
+            winner = 0;
+            matchOver = true;
+        }
         else
         {
             matchOver = CheckForWinner(boardState,activeSide, out winner);
-
-            if (!matchOver && turnCount == maxTurnCount)
-            {
-                winner = 0;
-                matchOver = true;
-            }
         }
     }
 

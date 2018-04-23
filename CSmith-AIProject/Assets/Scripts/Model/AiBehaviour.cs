@@ -12,8 +12,13 @@ public class AiBehaviour {
     static int[] centreDoubleDiagonals = new int[6] {10, 14, 15, 19, 20, 24 };
     static int[] otherTiles = new int[16] { 1, 2, 3, 6, 7, 12, 13, 16, 18, 21, 22, 27, 28, 31, 32, 33 };
 
+    static List<BoardNode> boardNodes;
+
     static public bool PerformTurn(Board _currentBoard, int _aiPlayer,bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth)
     {
+
+        if (boardNodes == null)
+            boardNodes = new List<BoardNode>();
 
         Search.iterations = 0;
         _move = new StoneMove();
@@ -25,8 +30,8 @@ public class AiBehaviour {
 
         if (shuffledList.Count > 0)
         {
-           Stopwatch stopWatch = new Stopwatch();
-           stopWatch.Start();
+          // Stopwatch stopWatch = new Stopwatch();
+          // stopWatch.Start();
 
             StoneMove selectedMove = possibleMoves[0];
             float selectedMoveValue = -Mathf.Infinity;
@@ -35,47 +40,98 @@ public class AiBehaviour {
             {
                 _move = shuffledList.First();
                 return true;
-            }
+            }           
             else
             {
-                foreach (StoneMove m in shuffledList)
+                bool existingNodeFound = false;
+                BoardNode baseNode = new BoardNode(_currentBoard, _aiPlayer);
+
+                if (boardNodes.Count > 0)
                 {
-                    Board testBoard = _currentBoard.Clone();
-                    testBoard.ResolveMove(m);
-
-                    bool prevStateFound = false;
-                    foreach (Board b in CheckersMain.prevStates)
+                    for (int i = 0; i < boardNodes.Count; i++)
                     {
-                        FFData data;
-                        if (b == testBoard)
+                        if (boardNodes[i].boardState == _currentBoard)
                         {
-                            prevStateFound = true;
-                        }
-                    }
-
-                    if (!prevStateFound)
-                    {
-                        float moveValue = Search.AlphaBeta(new BoardNode(testBoard, 3 - _aiPlayer), _searchDepth, Mathf.NegativeInfinity, Mathf.Infinity,_aiPlayer, false, ref net);
-                        if (moveValue > selectedMoveValue)
-                        {
-                            selectedMove = m;
-                            selectedMoveValue = moveValue;
+                            existingNodeFound = true;
+                            baseNode = boardNodes[i];
+                            break;
                         }
                     }
                 }
+
+                if (existingNodeFound && !baseNode.IsEndNode())
+                {
+                    foreach(BoardNode bn in baseNode.GetChildren())
+                    {
+                        bool prevStateFound = false;
+                        foreach (Board b in CheckersMain.prevStates)
+                        {
+                            if (b == bn.boardState)
+                            {
+                                prevStateFound = true;
+                            }
+                        }
+
+                        if (!prevStateFound)
+                        {
+                            float moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net);
+                            if (moveValue > selectedMoveValue)
+                            {
+                                selectedMove = bn.GetMoveMade();
+                                selectedMoveValue = moveValue;
+                            }
+                        }
+                    }
+                    boardNodes = baseNode.GetChildren();                  
+                }
+                else
+                {
+                    boardNodes = new List<BoardNode>();
+                    foreach (StoneMove m in shuffledList)
+                    {
+                        Board testBoard = _currentBoard.Clone();
+                        testBoard.ResolveMove(m);
+                        BoardNode bn = new BoardNode(testBoard, 3 - _aiPlayer, m);
+                        bool prevStateFound = false;
+                        foreach (Board b in CheckersMain.prevStates)
+                        {
+                            if (b == bn.boardState)
+                            {
+                                prevStateFound = true;
+                            }
+                        }
+
+                        if (!prevStateFound)
+                            boardNodes.Add(bn);
+                    }
+
+                    foreach (BoardNode bn in boardNodes)
+                    {
+
+                        float moveValue = Search.AlphaBeta(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity,_aiPlayer, false, ref net);
+
+                        if (moveValue > selectedMoveValue)
+                        {
+                            selectedMove = bn.GetMoveMade();
+                            selectedMoveValue = moveValue;
+                        }                                 
+                    }
+                }
+                
             }
 
-            UnityEngine.Debug.Log("Selected move with value: " + selectedMoveValue);
-            UnityEngine.Debug.Log("iterations: " + Search.iterations);
-            stopWatch.Stop();
-            UnityEngine.Debug.Log("Turn time:" + stopWatch.Elapsed);
+            if (_aiPlayer == GameManager.GetActive().GetP1Side())
+                UnityEngine.Debug.Log("Selected move with value: " + selectedMoveValue);
+            //UnityEngine.Debug.Log("iterations: " + Search.iterations);
+            //stopWatch.Stop();
+            //UnityEngine.Debug.Log("Turn time:" + stopWatch.Elapsed);
             _move = selectedMove;
             return true;
         }
         else
         {
             FFData data;
-            GetBoardRating(new BoardNode(_currentBoard, _aiPlayer), _aiPlayer, out data, ref net);
+            GetBoardRating(_currentBoard, _aiPlayer, out data, ref net);
             return false;
         }
     }
@@ -243,7 +299,7 @@ public class AiBehaviour {
             return true;
     }
 
-    static public float GetBoardRating(BoardNode _node, int _activePlayer,out FFData data, ref NeuralNetwork net)
+    static public float GetBoardRating(Board board, int _activePlayer,out FFData data, ref NeuralNetwork net)
     {
 
         //pieceAdvantage        : 0;
@@ -266,9 +322,6 @@ public class AiBehaviour {
 
         for (int i = 0; i < dataArray.Length; i++)
             dataArray[i] = 0;
-
-        Board board = _node.boardState;
-
 
         if (_activePlayer == 1)
         {
@@ -368,16 +421,16 @@ public class AiBehaviour {
         if (dataArray[0] < 0) dataArray[0] = 0;
         if (dataArray[1] < 0) dataArray[1] = 0;
 
-        dataArray[2] = _node.GetCapThreats(_activePlayer);
-        dataArray[3] = _node.GetCapThreats(3 - _activePlayer);
+        dataArray[2] = board.GetCapThreats(_activePlayer);
+        dataArray[3] = board.GetCapThreats(3 - _activePlayer);
 
         data = net.FeedForward(dataArray);
 
         int winner;
-        if (CheckersMain.CheckForWinner(_node.boardState, _activePlayer, out winner))
+        if (CheckersMain.CheckForWinner(board, _activePlayer, out winner))
         {
-            if (winner == _activePlayer) data.a3[0, 0] = 1;
-            else if (winner == 3 - _activePlayer) data.a3[0, 0] = 0;
+            if (winner == _activePlayer) return 1;
+            else if (winner == 3 - _activePlayer) return 0;
         }
 
         return (float)data.a3[0, 0];

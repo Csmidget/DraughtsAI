@@ -8,24 +8,45 @@ public class BoardNode
     public Board boardState;
     private List<StoneMove> validMoves;
     private int activePlayer;
+    private List<BoardNode> childNodes;
+    private bool endNode;
+    private FFData nnData;
+    private StoneMove moveMade;
+    private bool valueCalculated;
 
     public BoardNode(Board _boardState, int _activePlayer)
     {
         boardState = _boardState.Clone();
         activePlayer = _activePlayer;
-
+        childNodes = new List<BoardNode>();
         validMoves = AiBehaviour.FindAllValidMoves(boardState, activePlayer);
+        endNode = true;
+        moveMade = null;
+        valueCalculated = false;
+    }
+
+    public BoardNode(Board _boardState, int _activePlayer,StoneMove _moveMade)
+    {
+        boardState = _boardState.Clone();
+        activePlayer = _activePlayer;
+        childNodes = new List<BoardNode>();
+        validMoves = AiBehaviour.FindAllValidMoves(boardState, activePlayer);
+        endNode = true;
+        moveMade = _moveMade;
+        valueCalculated = false;
     }
 
     public BoardNode(Board _boardState, int _activePlayer,bool _shuffleMoves)
     {
         boardState = _boardState.Clone();
         activePlayer = _activePlayer;
-
+        childNodes = new List<BoardNode>();
         validMoves = AiBehaviour.FindAllValidMoves(boardState, activePlayer);
         System.Random rnd = new System.Random();
         validMoves = validMoves.OrderBy(item => rnd.Next()).ToList();
-
+        endNode = true;
+        moveMade = null;
+        valueCalculated = false;
     }
 
     public int MoveCount()
@@ -37,88 +58,49 @@ public class BoardNode
     {
         List<StoneMove> moveList = new List<StoneMove>();
         moveList.AddRange(validMoves);
-        return moveList;
+        return validMoves;
     }
 
-    public int GetCapThreats(int _activePlayer)
+    public void AddChild(BoardNode _child)
     {
-        int ret = 0;
-        List<StoneMove> foundMoves = AiBehaviour.FindAllValidMoves(boardState, _activePlayer);
-        foreach (StoneMove s in foundMoves)
-        {
-            if (s.stoneCaptured)
-                ret += s.capturedStones.Count;
-
-            Board newBoard = boardState.Clone();
-            newBoard.ResolveMove(s);
-            List<StoneMove> enemyMoves =  AiBehaviour.FindAllValidMoves(newBoard, 3 - _activePlayer);
-            bool capped = false;
-            foreach (StoneMove s2 in enemyMoves)
-            {
-                if (s2.stoneCaptured && s2.capturedStones.Contains(s.endPos))
-                {
-                    capped = true;
-                }
-            }
-
-            if (!capped)
-            {
-                bool furtherCapFound = false;
-                bool firstCap = true;
-                List<StoneMove> furtherMoves = new List<StoneMove>();
-                AiBehaviour.FindValidMoves(newBoard, s.endPos, ref furtherCapFound, ref firstCap, ref furtherMoves);
-
-                if (furtherCapFound)
-                {
-                    foreach(StoneMove s2 in furtherMoves)
-                    {
-                        if (s2.stoneCaptured)
-                            ret += s2.capturedStones.Count;
-                    }
-                }
-            }
-
-        }
-        return ret;
+        if (endNode == true)
+            endNode = false;
+        childNodes.Add(_child);
     }
 
-  //  public int GetEnemyCapThreats(int _enemyPlayer)
-  //  {
-  //      int ret = 0;
-  //      foreach (StoneMove s in validMoves)
-  //      {
-  //          Board newBoard = boardState.Clone();
-  //          newBoard.ResolveMove(s);
-  //          List<StoneMove> enemyMoves = AiBehaviour.FindAllValidMoves(newBoard, 3 - _enemyPlayer);
-  //          bool capped = false;
-  //          foreach (StoneMove s2 in enemyMoves)
-  //          {
-  //              if (s2.stoneCaptured && s2.capturedStones.Contains(s.endPos))
-  //              {
-  //                  capped = true;
-  //              }
-  //          }
-  //
-  //          if (!capped)
-  //          {
-  //              bool furtherCapFound = false;
-  //              bool firstCap = true;
-  //              List<StoneMove> furtherMoves = new List<StoneMove>();
-  //              AiBehaviour.FindValidMoves(newBoard, s.endPos, ref furtherCapFound, ref firstCap, ref furtherMoves);
-  //
-  //              if (furtherCapFound)
-  //              {
-  //                  foreach (StoneMove s2 in furtherMoves)
-  //                  {
-  //                      ret += s2.capturedStones.Count;
-  //                  }
-  //              }
-  //          }
-  //
-  //      }
-  //      return ret;
-  //  }
+    public List<BoardNode> GetChildren()
+    {
+        return childNodes;
+    }
 
+    public StoneMove GetMoveMade()
+    {
+        return moveMade;
+    }
+
+    public bool IsEndNode()
+    {
+        return endNode;
+    }
+
+    public double GetValue(NeuralNetwork net)
+    {
+        valueCalculated = true;
+        return AiBehaviour.GetBoardRating(boardState, activePlayer, out nnData, ref net);
+    }
+    public FFData GetData()
+    {
+        if (valueCalculated)
+            return nnData;
+        else
+            return null;
+    }
+
+    public void Destroy()
+    {
+        childNodes.Clear();
+        validMoves.Clear();
+    }
     public int GetActivePlayer()
     {
         return activePlayer;
