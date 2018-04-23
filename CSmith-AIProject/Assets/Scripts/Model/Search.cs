@@ -14,7 +14,7 @@ public class Search {
         {
             if (_maximizingPlayer)
             {
-                v = (float)_node.GetValue(net);// AiBehaviour.GetBoardRating(_node, _searchingPlayer, out data, ref net);
+                v = (float)_node.GetValue(net);
                 return v;
             }
             else
@@ -39,7 +39,7 @@ public class Search {
             }
             else
             {
-                v = +Mathf.Infinity;
+                v = 1;
                 foreach (BoardNode b in _node.GetChildren())
                 {
                     v = Mathf.Min(v, TraverseNodeList(b, _depth - 1, _alpha, _beta, _searchingPlayer, true, ref net));
@@ -112,7 +112,7 @@ public class Search {
             }
             else
             {          
-                v = +Mathf.Infinity;
+                v = 1;
 
                 foreach (StoneMove m in _node.GetMoveList())
                 {

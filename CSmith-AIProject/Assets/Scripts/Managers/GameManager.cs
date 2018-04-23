@@ -78,13 +78,21 @@ public class GameManager : MonoBehaviour {
     {
         if (!training)
         {
-            if (model.GetActiveSide() == 1) return player1;
+
+            if (GetP1Side() == GetActiveSide()) return player1;
             else return player2;
+            //if (model.GetActiveSide() == 1) return player1;
+           // else return player2;
         }
         else
         {
             return PlayerType.AI;
         }
+    }
+
+    public void RevertTurn()
+    {
+        model.RevertTurn();
     }
 
     public Board GetBoardState()

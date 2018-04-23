@@ -177,9 +177,11 @@ public class CheckersMain
         if ((activeSide == p1Side && p1Type == PlayerType.Human) || (activeSide == (3 - p1Side) && p2Type == PlayerType.Human))
         {
             validMoves = GenerateValidMoveList(boardState, activeSide);
+            if (validMoves.Count == 0)
+            {
+                turnComplete = true;
+            }
         }
-
-
         EventManager.TriggerEvent("gameReset");
     }
 
@@ -190,8 +192,8 @@ public class CheckersMain
     public bool Update()
     {
 
-        if (((activeSide == 1 && p1Type == PlayerType.AI) || (activeSide == 2 && p2Type == PlayerType.AI)) && aiTurnDelay <= 0)
-        {
+        if ((p1Side == activeSide && p1Type == PlayerType.AI ) || (3 - p1Side == activeSide && p2Type == PlayerType.AI))
+        { 
             ProcessAITurn();
         }
 
@@ -245,6 +247,10 @@ public class CheckersMain
         if ((activeSide == p1Side && p1Type == PlayerType.Human) || (activeSide == (3 - p1Side) && p2Type == PlayerType.Human))
         {
             validMoves = GenerateValidMoveList(boardState, activeSide);
+            if (validMoves.Count == 0)
+            {
+                turnComplete = true;
+            }
         }
 
         EventManager.TriggerEvent("boardUpdated");
@@ -278,7 +284,7 @@ public class CheckersMain
             Debug.Log("trainingWins: " + trainingWins);
             Debug.Log("controlWins: " + controlWins);
 
-            if (trainingWins > controlWins + gamesPerCheck / 4)
+            if (trainingWins >= controlWins + gamesPerCheck / 5)
             {
                 //Savetofile
                 System.DateTime sn = System.DateTime.Now;
@@ -287,7 +293,7 @@ public class CheckersMain
                 controlUpdates++;
             }
 
-            //check win rate and save if improved
+            //Check win rate and save if improved
             trainingWins = 0;
             controlWins = 0;
         }
@@ -320,6 +326,7 @@ public class CheckersMain
         if (p1Wins == 8 || p2Wins == 8)
         {
             gameActive = false;
+            EventManager.TriggerEvent("boardUpdated");
             EventManager.TriggerEvent("tournamentComplete");
         }
     }
@@ -619,6 +626,27 @@ public class CheckersMain
 
         //If we get this far then there are no more checks to do. It is not a valid move.
         return false;
+    }
+
+    public void RevertTurn()
+    {
+        if (prevStates.Count > 2)
+        {
+            boardState = prevStates[prevStates.Count - 3].Clone();
+            prevStates.RemoveRange(prevStates.Count - 2, 2);
+
+            if((activeSide == p1Side && p1Type == PlayerType.Human) || (activeSide == (3 - p1Side) && p2Type == PlayerType.Human))
+            {
+                validMoves = GenerateValidMoveList(boardState, activeSide);
+                if (validMoves.Count == 0)
+                {
+                    turnComplete = true;
+                }
+            }
+
+            EventManager.TriggerEvent("turnOver");
+            EventManager.TriggerEvent("boardUpdated");
+        }
     }
 
     public int GetActiveSide()
