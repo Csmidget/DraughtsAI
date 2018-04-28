@@ -26,7 +26,7 @@ public class StoneMove
     }
 
     public StoneMove(int _startPos, int _endPos, bool _stoneCaptured, int _capturedStone, TileState _endState = TileState.Empty)
-    {
+    { 
         startPos = _startPos;
         endPos = _endPos;
         stoneCaptured = _stoneCaptured;

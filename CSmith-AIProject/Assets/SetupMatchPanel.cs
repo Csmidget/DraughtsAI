@@ -42,12 +42,14 @@ public class SetupMatchPanel : MonoBehaviour {
         int p2SearchDepthVal = 0;
 
         if (p1Type.text == "AI") p1TypeVal = PlayerType.AI;
+        else if (p1Type.text == "Dynamic AI") p1TypeVal = PlayerType.DynamicAI;
         else p1TypeVal = PlayerType.Human;
 
         if (p2Type.text == "AI") p2TypeVal = PlayerType.AI;
+        else if (p2Type.text == "Dynamic AI") p2TypeVal = PlayerType.DynamicAI;
         else p2TypeVal = PlayerType.Human;
 
-        if (p1TypeVal == PlayerType.AI)
+        if (p1TypeVal == PlayerType.AI || p1TypeVal == PlayerType.DynamicAI)
         {
             if (!int.TryParse(p1SearchDepth.text, out p1SearchDepthVal))
             {
@@ -55,7 +57,7 @@ public class SetupMatchPanel : MonoBehaviour {
             }
         }
 
-        if (p2TypeVal == PlayerType.AI)
+        if (p2TypeVal == PlayerType.AI || p2TypeVal == PlayerType.DynamicAI)
         {
             if (!int.TryParse(p2SearchDepth.text, out p2SearchDepthVal))
             {

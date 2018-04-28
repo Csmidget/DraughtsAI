@@ -23,6 +23,7 @@ public class CheckersMain
     int maxGames = 15;
     int p1Wins = 0;
     int p2Wins = 0;
+    int presetFirstMove = -1;
     //end of Tournament variables
 
     private int gamesComplete = 0;
@@ -111,11 +112,11 @@ public class CheckersMain
         p1SearchDepth = _p1SearchDepth;
         p2SearchDepth = _p2SearchDepth;
 
-        if (p1Type == PlayerType.AI)
+        if (p1Type == PlayerType.AI || p1Type == PlayerType.DynamicAI)
         {
             p1NeuralNetwork = new NeuralNetwork(_p1nnFileName);
         }
-        if (p2Type == PlayerType.AI)
+        if (p2Type == PlayerType.AI || p1Type == PlayerType.DynamicAI)
         {
             p2NeuralNetwork = new NeuralNetwork(_p2nnFileName);
         }
@@ -132,7 +133,7 @@ public class CheckersMain
         winner = 0;
         turnComplete = false;
         validMoves = GenerateValidMoveList(boardState, activeSide);
-
+        presetFirstMove = 0;
         EventManager.TriggerEvent("boardUpdated");
         EventManager.TriggerEvent("gameReset");
         return true;
@@ -152,6 +153,7 @@ public class CheckersMain
         p1Side = 1;
         netBackup = p1NeuralNetwork.Copy();
         turnComplete = false;
+        presetFirstMove = 0;
         EventManager.TriggerEvent("gameReset");
     }
 
@@ -192,7 +194,7 @@ public class CheckersMain
     public bool Update()
     {
 
-        if ((p1Side == activeSide && p1Type == PlayerType.AI ) || (3 - p1Side == activeSide && p2Type == PlayerType.AI))
+        if ((p1Side == activeSide && (p1Type == PlayerType.AI || p1Type == PlayerType.DynamicAI) ) || (3 - p1Side == activeSide && (p2Type == PlayerType.AI || p2Type == PlayerType.DynamicAI) ))
         { 
             ProcessAITurn();
         }
@@ -218,7 +220,7 @@ public class CheckersMain
                 {
                     UpdateTraining();
                 }
-                else if (tournament && winner != 0)
+                else if (tournament)
                 {
                     UpdateTournament();
                 }
@@ -277,14 +279,20 @@ public class CheckersMain
 
         netBackup = p1NeuralNetwork.Copy();
 
+        presetFirstMove++;
+        if (presetFirstMove >= 7)
+            presetFirstMove = 0;
+
         p1Side = 3 - p1Side;
 
-        if (gamesComplete % gamesPerCheck == 0)
+
+
+        if (trainingWins >= 13 || controlWins > 7)
         {
             Debug.Log("trainingWins: " + trainingWins);
             Debug.Log("controlWins: " + controlWins);
 
-            if (trainingWins >= controlWins + gamesPerCheck / 5)
+            if (trainingWins >= 13)
             {
                 //Savetofile
                 System.DateTime sn = System.DateTime.Now;
@@ -317,13 +325,15 @@ public class CheckersMain
         {
             p2Wins++;
         }
-        else
-            return;
 
         gamesComplete++;
         p1Side = 3 - p1Side;
 
-        if (p1Wins == 8 || p2Wins == 8)
+        presetFirstMove++;
+        if (presetFirstMove >= 7)
+            presetFirstMove = 0;
+
+        if (gamesComplete == 14)
         {
             gameActive = false;
             EventManager.TriggerEvent("boardUpdated");
@@ -347,6 +357,12 @@ public class CheckersMain
                 prevRuns.Add(currRun.Clone());
                 Debug.Log("current board rating:" + currRun.a3[0, 0]);
             }
+            else
+            {
+                FFData temp;
+                AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork);
+                Debug.Log("current board rating:" + temp.a3[0, 0]);
+            }
         }
         else
         {
@@ -354,7 +370,11 @@ public class CheckersMain
             searchDepth = p2SearchDepth;
         }
 
-        if (AiBehaviour.PerformTurn(boardState, activeSide, firstTurn, out chosenMove, ref net, searchDepth))
+        PlayerType otherPlayer;
+        if (activeSide == p1Side) otherPlayer = p2Type;
+        else otherPlayer = p1Type;
+
+        if (AiBehaviour.PerformTurn(boardState, activeSide,otherPlayer, firstTurn, out chosenMove, ref net, searchDepth,presetFirstMove))
         {
             if (chosenMove.stoneCaptured)
             {

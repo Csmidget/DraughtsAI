@@ -14,7 +14,7 @@ public class AiBehaviour {
 
     static List<BoardNode> boardNodes;
 
-    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth)
+    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth, int presetFirstMove)
     {
 
         if (boardNodes == null)
@@ -38,7 +38,12 @@ public class AiBehaviour {
 
             if (_firstTurn && _aiPlayer == 1)
             {
-                _move = shuffledList.First();
+                if (presetFirstMove >= 0 && presetFirstMove < possibleMoves.Count)
+                {
+                    _move = possibleMoves[presetFirstMove];
+                }
+                else
+                    _move = shuffledList.First();
                 return true;
             }           
             else
@@ -82,7 +87,21 @@ public class AiBehaviour {
                             }
                         }
                     }
-                    boardNodes = baseNode.GetChildren();                  
+                    if (otherPlayer == PlayerType.Human)
+                    {
+                        boardNodes.Clear();
+                        foreach (BoardNode bn in baseNode.GetChildren())
+                        {
+                            if (!bn.IsEndNode())
+                            {
+                                boardNodes.AddRange(bn.GetChildren());
+                            }
+                        }
+                    }
+                    else
+                    {
+                        boardNodes = baseNode.GetChildren();
+                    }
                 }
                 else
                 {
@@ -115,6 +134,18 @@ public class AiBehaviour {
                             selectedMove = bn.GetMoveMade();
                             selectedMoveValue = moveValue;
                         }                                 
+                    }
+                    if (otherPlayer == PlayerType.Human)
+                    {
+                        List<BoardNode> newNodeList = new List<BoardNode>(0);
+                        foreach (BoardNode bn in boardNodes)
+                        {
+                            if (!bn.IsEndNode())
+                            {
+                                newNodeList.AddRange(bn.GetChildren());
+                            }
+                        }
+                        boardNodes = newNodeList;
                     }
                 }
                 

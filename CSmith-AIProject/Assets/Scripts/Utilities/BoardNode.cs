@@ -70,7 +70,9 @@ public class BoardNode
 
     public List<BoardNode> GetChildren()
     {
-        return childNodes;
+        List<BoardNode> childList = new List<BoardNode>();
+        childList.AddRange(childNodes);
+        return childList;
     }
 
     public StoneMove GetMoveMade()
