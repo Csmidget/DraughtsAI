@@ -24,6 +24,20 @@ public class CheckersMain
     int p1Wins = 0;
     int p2Wins = 0;
     int presetFirstMove = -1;
+
+    float p1AccuracyMod = 0;
+    float p2AccuracyMod = 0;
+    //float p1BaseLine;
+    //float p2BaseLine;
+    //float p1BestBoard = 0;
+    //float p2BestBoard = 0;
+    //float p1WorstBoard = 1;
+    //float p2WorstBoard = 1;
+    List<float> p1PlayerBoardRatings;
+    List<float> p1EnemyBoardRatings;
+    List<float> p2PlayerBoardRatings;
+    List<float> p2EnemyBoardRatings;
+
     //end of Tournament variables
 
     private int gamesComplete = 0;
@@ -136,6 +150,17 @@ public class CheckersMain
         presetFirstMove = 0;
         EventManager.TriggerEvent("boardUpdated");
         EventManager.TriggerEvent("gameReset");
+
+        p1AccuracyMod = 0;
+        p2AccuracyMod = 0;
+        //p1BestBoard = 0;
+        //p2BestBoard = 0;
+        //p1WorstBoard = 1;
+        //p2WorstBoard = 1;
+        p1PlayerBoardRatings = new List<float>();
+        p1EnemyBoardRatings = new List<float>();
+        p2PlayerBoardRatings = new List<float>();
+        p2EnemyBoardRatings = new List<float>();
         return true;
     }
 
@@ -155,6 +180,8 @@ public class CheckersMain
         turnComplete = false;
         presetFirstMove = 0;
         EventManager.TriggerEvent("gameReset");
+        p1AccuracyMod = 0;
+        p2AccuracyMod = 0;
     }
 
     public void InitNewGame()
@@ -185,6 +212,15 @@ public class CheckersMain
             }
         }
         EventManager.TriggerEvent("gameReset");
+
+        //p1WorstBoard = 1;
+        //p2WorstBoard = 1;
+        //p1BestBoard = 0;
+        //p2BestBoard = 0;
+        p1PlayerBoardRatings = new List<float>();
+        p1EnemyBoardRatings = new List<float>();
+        p2PlayerBoardRatings = new List<float>();
+        p2EnemyBoardRatings = new List<float>();
     }
 
     /// <summary>
@@ -194,8 +230,9 @@ public class CheckersMain
     public bool Update()
     {
 
-        if ((p1Side == activeSide && (p1Type == PlayerType.AI || p1Type == PlayerType.DynamicAI) ) || (3 - p1Side == activeSide && (p2Type == PlayerType.AI || p2Type == PlayerType.DynamicAI) ))
-        { 
+        if ((p1Side == activeSide && (p1Type == PlayerType.AI || p1Type == PlayerType.DynamicAI)) || (3 - p1Side == activeSide && (p2Type == PlayerType.AI || p2Type == PlayerType.DynamicAI)))
+        {
+            ProcessDynamicAI();
             ProcessAITurn();
         }
 
@@ -221,7 +258,7 @@ public class CheckersMain
                     UpdateTraining();
                 }
                 else if (tournament)
-                {
+                {  
                     UpdateTournament();
                 }
                 EventManager.TriggerEvent("gameOver");
@@ -310,20 +347,24 @@ public class CheckersMain
             gameActive = false;
             EventManager.TriggerEvent("trainingComplete");
             System.DateTime sn = System.DateTime.Now;
-                p1NeuralNetwork.SaveToFile("NetWeights\\" + sn.ToShortDateString().Replace('/', '-').Trim(' ') + '-' + sn.ToShortTimeString().Replace(':', '-') + "_TrainingEnd");
+            p1NeuralNetwork.SaveToFile("NetWeights\\" + sn.ToShortDateString().Replace('/', '-').Trim(' ') + '-' + sn.ToShortTimeString().Replace(':', '-') + "_TrainingEnd");
             training = false;
         }
     }
 
     void UpdateTournament()
     {
+        RecalculateDynamicAI();
+
         if (p1Side == winner)
         {
-            p1Wins++;         
+            if (gamesComplete > 5)
+                p1Wins++;         
         }
         else if (3 - p1Side == winner)
         {
-            p2Wins++;
+            if (gamesComplete > 5)
+                p2Wins++;
         }
 
         gamesComplete++;
@@ -333,11 +374,57 @@ public class CheckersMain
         if (presetFirstMove >= 7)
             presetFirstMove = 0;
 
-        if (gamesComplete == 14)
+        if (gamesComplete == 20)
         {
             gameActive = false;
             EventManager.TriggerEvent("boardUpdated");
             EventManager.TriggerEvent("tournamentComplete");
+        }
+    }
+
+    private void ProcessDynamicAI()
+    {
+        FFData temp;
+        if (activeSide == p1Side)
+        {
+            if (p1Type == PlayerType.DynamicAI)
+            {
+                float boardRating = AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork);
+                p1PlayerBoardRatings.Add(boardRating);
+            }
+            if (p2Type == PlayerType.DynamicAI)
+            {
+                p2EnemyBoardRatings.Add(AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p2NeuralNetwork));
+            }
+        }
+        else if (activeSide == 3 - p1Side)
+        {
+
+            if (p2Type == PlayerType.DynamicAI)
+            {
+                float boardRating = AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p2NeuralNetwork);
+                p2PlayerBoardRatings.Add(boardRating);
+            }
+            if (p1Type == PlayerType.DynamicAI)
+            {
+                p1EnemyBoardRatings.Add(AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork));
+            }
+        }
+    }
+
+    private void RecalculateDynamicAI()
+    {
+        if (p1Type == PlayerType.DynamicAI)
+        {
+            p1AccuracyMod = Mathf.Max(0, (0.95f * p1AccuracyMod) + 0.2f * (ListAverage(p1PlayerBoardRatings) - ListAverage(p1EnemyBoardRatings)));
+            Debug.Log("p1ratingcount: " + p1PlayerBoardRatings.Count);
+            Debug.Log("p2ratingcount: " + p1EnemyBoardRatings.Count);
+            Debug.Log("P1 Accuracy modifier: " + p1AccuracyMod);
+        }
+        if (p2Type == PlayerType.DynamicAI)
+        {
+            p2AccuracyMod = Mathf.Max(0, (0.95f * p2AccuracyMod) + 0.2f * (ListAverage(p2PlayerBoardRatings) - ListAverage(p2EnemyBoardRatings)));
+            Debug.Log("P2 Accuracy modifier: " + p2AccuracyMod);
         }
     }
 
@@ -346,35 +433,39 @@ public class CheckersMain
         StoneMove chosenMove;
         NeuralNetwork net;
         int searchDepth;
+        float accuracyMod = 0; ;
 
         if (activeSide == p1Side)
         {
             net = p1NeuralNetwork;
             searchDepth = p1SearchDepth;
+            accuracyMod = p1AccuracyMod;
             if (training)
             {
                 AiBehaviour.GetBoardRating(boardState, activeSide, out currRun, ref p1NeuralNetwork);
                 prevRuns.Add(currRun.Clone());
-                Debug.Log("current board rating:" + currRun.a3[0, 0]);
+                //Debug.Log("current board rating:" + currRun.a3[0, 0]);
             }
             else
             {
                 FFData temp;
                 AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork);
-                Debug.Log("current board rating:" + temp.a3[0, 0]);
+                //Debug.Log("current board rating:" + temp.a3[0, 0]);
             }
+            
         }
         else
         {
             net = p2NeuralNetwork;
             searchDepth = p2SearchDepth;
+            accuracyMod = p2AccuracyMod;
         }
 
         PlayerType otherPlayer;
         if (activeSide == p1Side) otherPlayer = p2Type;
         else otherPlayer = p1Type;
 
-        if (AiBehaviour.PerformTurn(boardState, activeSide,otherPlayer, firstTurn, out chosenMove, ref net, searchDepth,presetFirstMove))
+        if (AiBehaviour.PerformTurn(boardState, activeSide, otherPlayer, firstTurn, out chosenMove, ref net, searchDepth, presetFirstMove, accuracyMod))
         {
             if (chosenMove.stoneCaptured)
             {
@@ -404,7 +495,7 @@ public class CheckersMain
         }
         else
         {
-            matchOver = CheckForWinner(boardState,activeSide, out winner);
+            matchOver = CheckForWinner(boardState, activeSide, out winner);
         }
     }
 
@@ -412,7 +503,7 @@ public class CheckersMain
     {
         bool winnerFound = false;
         _winner = 0;
-       
+
         if (_boardState.GetPieceCount(3 - _activeSide) == 0)
         {
             winnerFound = true;
@@ -507,6 +598,16 @@ public class CheckersMain
     public List<StoneMove> GetAllValidMoves()
     {
         return validMoves;
+    }
+
+    public float ListAverage(List<float> _list)
+    {
+        float returnVal = 0;
+        for (int i = 0; i < _list.Count; i++)
+        {
+            returnVal += _list[i];
+        }
+        return returnVal / _list.Count;
     }
 
     public void AttemptMove(StoneMove _move)

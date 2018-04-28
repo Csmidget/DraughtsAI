@@ -6,7 +6,7 @@ public class Search {
 
     public static int iterations;
 
-    static public float TraverseNodeList(BoardNode _node, int _depth, float _alpha, float _beta, int _searchingPlayer, bool _maximizingPlayer, ref NeuralNetwork net)
+    static public float TraverseNodeList(BoardNode _node, int _depth, float _alpha, float _beta, int _searchingPlayer, bool _maximizingPlayer, ref NeuralNetwork net, float _accuracyMod)
     {
         float v;
 
@@ -15,11 +15,16 @@ public class Search {
             if (_maximizingPlayer)
             {
                 v = (float)_node.GetValue(net);
+                if (_accuracyMod != 0)
+                {
+                    System.Random random = new MathNet.Numerics.Random.SystemRandomSource();
+                    v = v + (float)random.NextDouble() * (2 * _accuracyMod) - _accuracyMod;
+                }
                 return v;
             }
             else
             {
-                return AlphaBeta(_node, _depth, _alpha, _beta, _searchingPlayer, _maximizingPlayer, ref net);
+                return AlphaBeta(_node, _depth, _alpha, _beta, _searchingPlayer, _maximizingPlayer, ref net, _accuracyMod);
             }
         }
 
@@ -30,7 +35,7 @@ public class Search {
                 v = -Mathf.Infinity;
                 foreach (BoardNode b in _node.GetChildren())
                 {
-                    v = Mathf.Max(v, TraverseNodeList(b, _depth - 1, _alpha, _beta,_searchingPlayer, false, ref net));
+                    v = Mathf.Max(v, TraverseNodeList(b, _depth - 1, _alpha, _beta,_searchingPlayer, false, ref net, _accuracyMod));
                     _alpha = Mathf.Max(_alpha, v);
                     if (_beta <= _alpha)
                         break;
@@ -42,7 +47,7 @@ public class Search {
                 v = 1;
                 foreach (BoardNode b in _node.GetChildren())
                 {
-                    v = Mathf.Min(v, TraverseNodeList(b, _depth - 1, _alpha, _beta, _searchingPlayer, true, ref net));
+                    v = Mathf.Min(v, TraverseNodeList(b, _depth - 1, _alpha, _beta, _searchingPlayer, true, ref net, _accuracyMod));
                     _beta = Mathf.Min(_beta, v);
                     if (_beta <= _alpha)
                         break;
@@ -52,7 +57,7 @@ public class Search {
         }
         else
         {
-            return AlphaBeta(_node, _depth, _alpha, _beta, _searchingPlayer, _maximizingPlayer, ref net);
+            return AlphaBeta(_node, _depth, _alpha, _beta, _searchingPlayer, _maximizingPlayer, ref net, _accuracyMod);
 
             //if (_maximizingPlayer)
             //{
@@ -97,7 +102,7 @@ public class Search {
         }
     }
 
-    static public float AlphaBeta(BoardNode _node, int _depth, float _alpha,float  _beta,int _searchingPlayer, bool _maximizingPlayer, ref NeuralNetwork net)
+    static public float AlphaBeta(BoardNode _node, int _depth, float _alpha,float  _beta,int _searchingPlayer, bool _maximizingPlayer, ref NeuralNetwork net, float _accuracyMod)
     {
         iterations++;
 
@@ -108,6 +113,11 @@ public class Search {
             if (_maximizingPlayer)
             {
                 v = (float)_node.GetValue(net);
+                if (_accuracyMod != 0)
+                {
+                    System.Random random = new MathNet.Numerics.Random.SystemRandomSource();
+                    v = v + (float)random.NextDouble() * (2 * _accuracyMod) - _accuracyMod;
+                }
                 return v;
             }
             else
@@ -123,7 +133,7 @@ public class Search {
 
                 foreach (BoardNode b in _node.GetChildren())
                 {
-                    v = Mathf.Min(v, AlphaBeta(b, _depth - 1, _alpha, _beta, _searchingPlayer, true, ref net));
+                    v = Mathf.Min(v, AlphaBeta(b, _depth - 1, _alpha, _beta, _searchingPlayer, true, ref net, _accuracyMod));
                     _beta = Mathf.Min(_beta, v);
                     if (_beta <= _alpha)
                         break;
@@ -146,7 +156,7 @@ public class Search {
 
             foreach (BoardNode b in _node.GetChildren())
             {
-                v = Mathf.Max(v, AlphaBeta(b, _depth - 1, _alpha, _beta, _searchingPlayer, false,ref net));
+                v = Mathf.Max(v, AlphaBeta(b, _depth - 1, _alpha, _beta, _searchingPlayer, false,ref net, _accuracyMod));
                 _alpha = Mathf.Max(_alpha, v);
                 if (_beta <= _alpha)
                     break;
@@ -166,7 +176,7 @@ public class Search {
 
             foreach (BoardNode b in _node.GetChildren())
             {
-                v = Mathf.Min(v, AlphaBeta(b, _depth - 1, _alpha, _beta,_searchingPlayer, true,ref net));
+                v = Mathf.Min(v, AlphaBeta(b, _depth - 1, _alpha, _beta,_searchingPlayer, true,ref net, _accuracyMod));
                 _beta = Mathf.Min(_beta, v);
                 if (_beta <= _alpha)
                     break;

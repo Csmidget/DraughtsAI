@@ -14,7 +14,7 @@ public class AiBehaviour {
 
     static List<BoardNode> boardNodes;
 
-    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth, int presetFirstMove)
+    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth, int presetFirstMove, float _accuracyMod)
     {
 
         if (boardNodes == null)
@@ -30,8 +30,8 @@ public class AiBehaviour {
 
         if (shuffledList.Count > 0)
         {
-          // Stopwatch stopWatch = new Stopwatch();
-          // stopWatch.Start();
+            // Stopwatch stopWatch = new Stopwatch();
+            // stopWatch.Start();
 
             StoneMove selectedMove = possibleMoves[0];
             float selectedMoveValue = -Mathf.Infinity;
@@ -45,7 +45,7 @@ public class AiBehaviour {
                 else
                     _move = shuffledList.First();
                 return true;
-            }           
+            }
             else
             {
                 bool existingNodeFound = false;
@@ -66,7 +66,7 @@ public class AiBehaviour {
 
                 if (existingNodeFound && !baseNode.IsEndNode())
                 {
-                    foreach(BoardNode bn in baseNode.GetChildren())
+                    foreach (BoardNode bn in baseNode.GetChildren())
                     {
                         bool prevStateFound = false;
                         foreach (Board b in CheckersMain.prevStates)
@@ -79,7 +79,7 @@ public class AiBehaviour {
 
                         if (!prevStateFound)
                         {
-                            float moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net);
+                            float moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, _accuracyMod);
                             if (moveValue > selectedMoveValue)
                             {
                                 selectedMove = bn.GetMoveMade();
@@ -127,13 +127,13 @@ public class AiBehaviour {
                     foreach (BoardNode bn in boardNodes)
                     {
 
-                        float moveValue = Search.AlphaBeta(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity,_aiPlayer, false, ref net);
+                        float moveValue = Search.AlphaBeta(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, _accuracyMod);
 
                         if (moveValue > selectedMoveValue)
                         {
                             selectedMove = bn.GetMoveMade();
                             selectedMoveValue = moveValue;
-                        }                                 
+                        }
                     }
                     if (otherPlayer == PlayerType.Human)
                     {
@@ -148,11 +148,13 @@ public class AiBehaviour {
                         boardNodes = newNodeList;
                     }
                 }
-                
+
             }
 
-            if (_aiPlayer == GameManager.GetActive().GetP1Side())
-                UnityEngine.Debug.Log("Selected move with value: " + selectedMoveValue);
+            //if (_aiPlayer == GameManager.GetActive().GetP1Side())
+            //{ 
+            // UnityEngine.Debug.Log("Selected move with value: " + selectedMoveValue);
+            //}
             //UnityEngine.Debug.Log("iterations: " + Search.iterations);
             //stopWatch.Stop();
             //UnityEngine.Debug.Log("Turn time:" + stopWatch.Elapsed);

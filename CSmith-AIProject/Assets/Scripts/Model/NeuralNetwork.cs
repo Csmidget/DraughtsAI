@@ -196,7 +196,7 @@ public class NeuralNetwork{
         //Multiple input array (a1) by weights for each node in hidden layer to produce number at each node
         data.z2 = data.a1.Multiply(theta1.Transpose());
 
-        //Run logistic function on results to normalize
+        //Run logistic function on results to squash
         data.a2 = MatrixSigmoid(data.z2);
 
         //Add bias unit to results of hidden layer
@@ -205,7 +205,7 @@ public class NeuralNetwork{
         //Multiply results of hidden layer with weights for output node to produce final result
         data.z3 = data.a2.Multiply(theta2.Transpose());
 
-        //Normalize final result
+        //Squash final result
         data.a3 = MatrixSigmoid(data.z3);
 
         //As we are using only 1 output, result is a 1x1 matrix
