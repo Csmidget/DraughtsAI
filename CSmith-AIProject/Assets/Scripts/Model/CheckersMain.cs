@@ -164,6 +164,14 @@ public class CheckersMain
         return true;
     }
 
+    /// <summary>
+    /// Initialize the model in training mode
+    /// </summary>
+    /// <param name="_alpha">The learning rate of the neural network</param>
+    /// <param name="_lambda">Eligibility trace decay</param>
+    /// <param name="_maxIterations">Number of matches to play before stopping</param>
+    /// <param name="_nnFileName">file name of neural network to train</param>
+    /// <param name="_SearchDepth">size of search tree to use</param>
     public void InitTraining(double _alpha, double _lambda, int _maxIterations, string _nnFileName, int _SearchDepth)
     {
         alpha = _alpha;
@@ -184,6 +192,7 @@ public class CheckersMain
         p2AccuracyMod = 0;
     }
 
+    //Reset the board and variables for new match
     public void InitNewGame()
     {
         turnCount = 0;
@@ -195,6 +204,7 @@ public class CheckersMain
         turnComplete = false;
         firstTurn = true;
 
+        //Reset elgibility trace 
         if (training)
             p1NeuralNetwork.ResetTraceValues();
 
@@ -358,23 +368,23 @@ public class CheckersMain
 
         if (p1Side == winner)
         {
-            if (gamesComplete > 5)
+            //if (gamesComplete > 5)
                 p1Wins++;         
         }
         else if (3 - p1Side == winner)
         {
-            if (gamesComplete > 5)
+            //if (gamesComplete > 5)
                 p2Wins++;
         }
 
         gamesComplete++;
         p1Side = 3 - p1Side;
 
-        presetFirstMove++;
+        //presetFirstMove++;
         if (presetFirstMove >= 7)
             presetFirstMove = 0;
 
-        if (gamesComplete == 20)
+        if (gamesComplete == 30)
         {
             gameActive = false;
             EventManager.TriggerEvent("boardUpdated");
@@ -416,14 +426,18 @@ public class CheckersMain
     {
         if (p1Type == PlayerType.DynamicAI)
         {
-            p1AccuracyMod = Mathf.Max(0, (0.95f * p1AccuracyMod) + 0.2f * (ListAverage(p1PlayerBoardRatings) - ListAverage(p1EnemyBoardRatings)));
-            Debug.Log("p1ratingcount: " + p1PlayerBoardRatings.Count);
-            Debug.Log("p2ratingcount: " + p1EnemyBoardRatings.Count);
+            float avDiff = ListAverage(p1PlayerBoardRatings) - ListAverage(p1EnemyBoardRatings);
+            Debug.Log("AvDiff: " + avDiff);
+            if (avDiff < 0) avDiff = avDiff / 2;
+            p1AccuracyMod = Mathf.Max(0, (0.95f * p1AccuracyMod) + 0.2f * avDiff);         
             Debug.Log("P1 Accuracy modifier: " + p1AccuracyMod);
         }
         if (p2Type == PlayerType.DynamicAI)
         {
-            p2AccuracyMod = Mathf.Max(0, (0.95f * p2AccuracyMod) + 0.2f * (ListAverage(p2PlayerBoardRatings) - ListAverage(p2EnemyBoardRatings)));
+            float avDiff = ListAverage(p2PlayerBoardRatings) - ListAverage(p2EnemyBoardRatings);
+            Debug.Log("AvDiff: " + avDiff);
+            if (avDiff < 0) avDiff = avDiff / 2;
+            p2AccuracyMod = Mathf.Max(0, (0.95f * p2AccuracyMod) + 0.2f * avDiff);
             Debug.Log("P2 Accuracy modifier: " + p2AccuracyMod);
         }
     }
@@ -545,20 +559,19 @@ public class CheckersMain
             if (winner != 0)
             {
                 prevRuns[prevRuns.Count - 1].a3[0, 0] = 1 - Mathf.Abs(p1Side - winner);
-                p1NeuralNetwork.BackPropagate(prevRuns.GetRange(0, prevRuns.Count - 1), prevRuns[prevRuns.Count - 1], alpha, lambda);
+                p1NeuralNetwork.BackPropagate(prevRuns[prevRuns.Count - 2], prevRuns[prevRuns.Count - 1], alpha, lambda);
             }
         }
         else
         {
             if (!firstTurn && p1Side == activeSide)
-                p1NeuralNetwork.BackPropagate(prevRuns.GetRange(0, prevRuns.Count - 1), prevRuns[prevRuns.Count - 1], alpha, lambda);
+                p1NeuralNetwork.BackPropagate(prevRuns[prevRuns.Count - 2], prevRuns[prevRuns.Count - 1], alpha, lambda);
         }
 
         if (matchOver && winner == 0)
             p1NeuralNetwork = netBackup;
     }
 
-    //TODO: Optimise
     static public List<StoneMove> GenerateValidMoveList(Board _board, int _activeSide)
     {
 
