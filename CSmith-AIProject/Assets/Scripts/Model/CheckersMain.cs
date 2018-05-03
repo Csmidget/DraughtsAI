@@ -429,7 +429,7 @@ public class CheckersMain
             float avDiff = ListAverage(p1PlayerBoardRatings) - ListAverage(p1EnemyBoardRatings);
             Debug.Log("AvDiff: " + avDiff);
             if (avDiff < 0) avDiff = avDiff / 2;
-            p1AccuracyMod = Mathf.Max(0, (0.95f * p1AccuracyMod) + 0.2f * avDiff);         
+            p1AccuracyMod = Mathf.Max(0, (0.9f * p1AccuracyMod) + 0.2f * avDiff);         
             Debug.Log("P1 Accuracy modifier: " + p1AccuracyMod);
         }
         if (p2Type == PlayerType.DynamicAI)
@@ -437,7 +437,7 @@ public class CheckersMain
             float avDiff = ListAverage(p2PlayerBoardRatings) - ListAverage(p2EnemyBoardRatings);
             Debug.Log("AvDiff: " + avDiff);
             if (avDiff < 0) avDiff = avDiff / 2;
-            p2AccuracyMod = Mathf.Max(0, (0.95f * p2AccuracyMod) + 0.2f * avDiff);
+            p2AccuracyMod = Mathf.Max(0, (0.9f * p2AccuracyMod) + 0.2f * avDiff);
             Debug.Log("P2 Accuracy modifier: " + p2AccuracyMod);
         }
     }
