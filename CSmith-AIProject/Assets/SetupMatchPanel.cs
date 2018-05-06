@@ -41,15 +41,44 @@ public class SetupMatchPanel : MonoBehaviour {
         int p1SearchDepthVal = 0;
         int p2SearchDepthVal = 0;
 
-        if (p1Type.text == "AI") p1TypeVal = PlayerType.AI;
-        else if (p1Type.text == "Dynamic AI") p1TypeVal = PlayerType.DynamicAI;
-        else p1TypeVal = PlayerType.Human;
+        switch(p1Type.text)
+        {
+            case "AI":
+                p1TypeVal = PlayerType.AI;
+                break;
+            case "ADRNG AI":
+                p1TypeVal = PlayerType.ADRNG;
+                break;
+            case "DROSAS AI":
+                p1TypeVal = PlayerType.DROSAS;
+                break;
+            case "Dynamic3":
+                p1TypeVal = PlayerType.Dynamic3;
+                break;
+            default:
+                p1TypeVal = PlayerType.Human;
+                break;
+        }
+        switch (p2Type.text)
+        {
+            case "AI":
+                p2TypeVal = PlayerType.AI;
+                break;
+            case "ADRNG AI":
+                p2TypeVal = PlayerType.ADRNG;
+                break;
+            case "DROSAS AI":
+                p2TypeVal = PlayerType.DROSAS;
+                break;
+            case "Dynamic3":
+                p2TypeVal = PlayerType.Dynamic3;
+                break;
+            default:
+                p2TypeVal = PlayerType.Human;
+                break;
+        }    
 
-        if (p2Type.text == "AI") p2TypeVal = PlayerType.AI;
-        else if (p2Type.text == "Dynamic AI") p2TypeVal = PlayerType.DynamicAI;
-        else p2TypeVal = PlayerType.Human;
-
-        if (p1TypeVal == PlayerType.AI || p1TypeVal == PlayerType.DynamicAI)
+        if (p1TypeVal != PlayerType.Human)
         {
             if (!int.TryParse(p1SearchDepth.text, out p1SearchDepthVal))
             {
@@ -57,7 +86,7 @@ public class SetupMatchPanel : MonoBehaviour {
             }
         }
 
-        if (p2TypeVal == PlayerType.AI || p2TypeVal == PlayerType.DynamicAI)
+        if (p2TypeVal != PlayerType.Human)
         {
             if (!int.TryParse(p2SearchDepth.text, out p2SearchDepthVal))
             {

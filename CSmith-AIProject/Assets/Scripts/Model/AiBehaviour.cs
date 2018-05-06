@@ -13,9 +13,14 @@ public class AiBehaviour {
     static int[] otherTiles = new int[16] { 1, 2, 3, 6, 7, 12, 13, 16, 18, 21, 22, 27, 28, 31, 32, 33 };
 
     static List<BoardNode> boardNodes;
+    static List<double> computeTime = new List<double>();
+    static List<BoardNode> dynamic3MoveList = new List<BoardNode>();
+    static float[] InitBoardVal = new float[2]{ 0, 0 };
 
-    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth, int presetFirstMove, float _accuracyMod)
+    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,PlayerType currentPlayer, PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth, int presetFirstMove, float _accuracyMod)
     {
+        if (currentPlayer == PlayerType.Dynamic3)
+            dynamic3MoveList.Clear();
 
         if (boardNodes == null)
             boardNodes = new List<BoardNode>();
@@ -30,21 +35,27 @@ public class AiBehaviour {
 
         if (shuffledList.Count > 0)
         {
-            // Stopwatch stopWatch = new Stopwatch();
-            // stopWatch.Start();
+          //   Stopwatch stopWatch = new Stopwatch();
+          //   stopWatch.Start();
 
             StoneMove selectedMove = possibleMoves[0];
             float selectedMoveValue = -Mathf.Infinity;
 
-            if (_firstTurn && _aiPlayer == 1)
+            if (_firstTurn)
             {
-                if (presetFirstMove >= 0 && presetFirstMove < possibleMoves.Count)
+                FFData temp;
+                float boardVal = GetBoardRating(_currentBoard, _aiPlayer,out temp, ref net);
+                InitBoardVal[_aiPlayer - 1] = boardVal;
+                if (_aiPlayer == 1)
                 {
-                    _move = possibleMoves[presetFirstMove];
-                }
-                else
-                    _move = shuffledList.First();
-                return true;
+                    if (presetFirstMove >= 0 && presetFirstMove < possibleMoves.Count)
+                    {
+                        _move = possibleMoves[presetFirstMove];
+                    }
+                    else
+                        _move = shuffledList.First();
+                    return true;
+                }       
             }
             else
             {
@@ -64,100 +75,96 @@ public class AiBehaviour {
                     }
                 }
 
+                boardNodes = new List<BoardNode>();
+
                 if (existingNodeFound && !baseNode.IsEndNode())
                 {
-                    foreach (BoardNode bn in baseNode.GetChildren())
-                    {
-                        bool prevStateFound = false;
-                        foreach (Board b in CheckersMain.prevStates)
-                        {
-                            if (b == bn.boardState)
-                            {
-                                prevStateFound = true;
-                            }
-                        }
-
-                        if (!prevStateFound)
-                        {
-                            float moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, _accuracyMod);
-                            if (moveValue > selectedMoveValue)
-                            {
-                                selectedMove = bn.GetMoveMade();
-                                selectedMoveValue = moveValue;
-                            }
-                        }
-                    }
-                    if (otherPlayer == PlayerType.Human)
-                    {
-                        boardNodes.Clear();
-                        foreach (BoardNode bn in baseNode.GetChildren())
-                        {
-                            if (!bn.IsEndNode())
-                            {
-                                boardNodes.AddRange(bn.GetChildren());
-                            }
-                        }
-                    }
-                    else
-                    {
-                        boardNodes = baseNode.GetChildren();
-                    }
+                    boardNodes.AddRange(baseNode.GetChildren());
                 }
                 else
-                {
-                    boardNodes = new List<BoardNode>();
+                {                   
                     foreach (StoneMove m in shuffledList)
                     {
                         Board testBoard = _currentBoard.Clone();
                         testBoard.ResolveMove(m);
                         BoardNode bn = new BoardNode(testBoard, 3 - _aiPlayer, m);
-                        bool prevStateFound = false;
-                        foreach (Board b in CheckersMain.prevStates)
-                        {
-                            if (b == bn.boardState)
-                            {
-                                prevStateFound = true;
-                            }
-                        }
-
-                        if (!prevStateFound)
-                            boardNodes.Add(bn);
-                    }
-
-                    foreach (BoardNode bn in boardNodes)
-                    {
-
-                        float moveValue = Search.AlphaBeta(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, _accuracyMod);
-
-                        if (moveValue > selectedMoveValue)
-                        {
-                            selectedMove = bn.GetMoveMade();
-                            selectedMoveValue = moveValue;
-                        }
-                    }
-                    if (otherPlayer == PlayerType.Human)
-                    {
-                        List<BoardNode> newNodeList = new List<BoardNode>(0);
-                        foreach (BoardNode bn in boardNodes)
-                        {
-                            if (!bn.IsEndNode())
-                            {
-                                newNodeList.AddRange(bn.GetChildren());
-                            }
-                        }
-                        boardNodes = newNodeList;
+                        boardNodes.Add(bn);
                     }
                 }
 
+                foreach (BoardNode bn in boardNodes)
+                {
+                    bool prevStateFound = false;
+                    foreach (Board b in CheckersMain.prevStates)
+                    {
+                        if (b == bn.boardState)
+                        {
+                            prevStateFound = true;
+                        }
+                    }
+
+                    float moveValue = Mathf.NegativeInfinity;
+                    if (!prevStateFound)
+                    {
+                        if (currentPlayer == PlayerType.ADRNG)
+                            moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, _accuracyMod);
+                        else
+                            moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, 0);
+                    }
+
+                    if (currentPlayer == PlayerType.Dynamic3 && moveValue >= 1 - _accuracyMod)
+                    {
+                        dynamic3MoveList.Add(bn);
+                    }
+                    else if (currentPlayer == PlayerType.DROSAS && (Mathf.Abs(InitBoardVal[_aiPlayer-1] - moveValue) < Mathf.Abs(InitBoardVal[_aiPlayer - 1] - selectedMoveValue) || moveValue >= 1) && selectedMoveValue < 1)
+                    {
+                        selectedMove = bn.GetMoveMade();
+                        selectedMoveValue = moveValue;
+                    }
+
+                    if ((currentPlayer == PlayerType.AI || currentPlayer == PlayerType.ADRNG || currentPlayer == PlayerType.Dynamic3) && moveValue > selectedMoveValue)
+                    {
+                        selectedMove = bn.GetMoveMade();
+                        selectedMoveValue = moveValue;
+                    }
+                }
+
+                if (otherPlayer == PlayerType.Human)
+                {
+                    List<BoardNode> newNodeList = new List<BoardNode>(0);
+                    foreach (BoardNode bn in boardNodes)
+                    {
+                        if (!bn.IsEndNode())
+                        {
+                            newNodeList.AddRange(bn.GetChildren());
+                        }
+                    }
+                    boardNodes = newNodeList;
+                }
+            }
+            /*
+                        if (_aiPlayer == GameManager.GetActive().GetP1Side())
+                        { 
+                         UnityEngine.Debug.Log("Selected move with value: " + selectedMoveValue);
+                        }
+                        UnityEngine.Debug.Log("iterations: " + Search.iterations);
+                        stopWatch.Stop();
+                        computeTime.Add(stopWatch.Elapsed.TotalSeconds);
+                        double averageCompute = 0;
+
+                        foreach (double d in computeTime)
+                        {
+                            averageCompute += d;
+                        }
+                        averageCompute = averageCompute / computeTime.Count;
+                        UnityEngine.Debug.Log("Average Turn time: " + averageCompute);
+                        UnityEngine.Debug.Log("Turn time:" + stopWatch.Elapsed);
+            */
+            if (currentPlayer == PlayerType.Dynamic3 && selectedMoveValue > 1 - _accuracyMod)
+            {
+                selectedMove = dynamic3MoveList.OrderBy(item => rnd.Next()).First().GetMoveMade();
             }
 
-            //if (_aiPlayer == GameManager.GetActive().GetP1Side())
-            //{ 
-            // UnityEngine.Debug.Log("Selected move with value: " + selectedMoveValue);
-            //}
-            //UnityEngine.Debug.Log("iterations: " + Search.iterations);
-            //stopWatch.Stop();
-            //UnityEngine.Debug.Log("Turn time:" + stopWatch.Elapsed);
             _move = selectedMove;
             return true;
         }

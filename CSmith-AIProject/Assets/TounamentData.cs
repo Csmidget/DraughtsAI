@@ -52,15 +52,23 @@ public class TounamentData : MonoBehaviour {
 
         if (p1Type == PlayerType.AI)
             p1String = "AI";
-        else if (p1Type == PlayerType.DynamicAI)
-            p1String = "DynamicAI";
+        else if (p1Type == PlayerType.ADRNG)
+            p1String = "ADRNG";
+        else if (p1Type == PlayerType.DROSAS)
+            p1SideString = "DROSAS";
+        else if (p1Type == PlayerType.Dynamic3)
+            p1SideString = "Dynamic3";
         else if (p1Type == PlayerType.Human)
             p1String = "Human";
 
         if (p2Type == PlayerType.AI)
             p2String = "AI";
-        else if (p2Type == PlayerType.DynamicAI)
-            p2String = "DynamicAI";
+        else if (p2Type == PlayerType.ADRNG)
+            p2String = "ADRNG";
+        else if (p2Type == PlayerType.DROSAS)
+            p2SideString = "DROSAS";
+        else if (p1Type == PlayerType.Dynamic3)
+            p2SideString = "Dynamic3";
         else if (p2Type == PlayerType.Human)
             p2String = "Human";
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum PlayerType {Human,AI,DynamicAI}
+public enum PlayerType {Human,AI,ADRNG,DROSAS,Dynamic3}
 
 
 public class GameManager : MonoBehaviour {
@@ -127,7 +127,7 @@ public class GameManager : MonoBehaviour {
 
     public void Quit()
     {
-        Application.Quit();
+        System.Diagnostics.Process.GetCurrentProcess().Kill();
     }
 
     public int GetTrainingWins()

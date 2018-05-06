@@ -59,7 +59,7 @@ public class CheckersMain
     int turnCount = 0;
     int maxTurnCount = 70;
     double alpha = 0.05; //learning rate
-    double lambda = 0.85; //arbitrary constant for partial derivatives of previous runs
+    double lambda = 0.85; //eligibility trace decay
 
     List<FFData> prevRuns;
     FFData currRun;
@@ -126,11 +126,11 @@ public class CheckersMain
         p1SearchDepth = _p1SearchDepth;
         p2SearchDepth = _p2SearchDepth;
 
-        if (p1Type == PlayerType.AI || p1Type == PlayerType.DynamicAI)
+        if (p1Type != PlayerType.Human)
         {
             p1NeuralNetwork = new NeuralNetwork(_p1nnFileName);
         }
-        if (p2Type == PlayerType.AI || p1Type == PlayerType.DynamicAI)
+        if (p2Type != PlayerType.Human)
         {
             p2NeuralNetwork = new NeuralNetwork(_p2nnFileName);
         }
@@ -153,10 +153,7 @@ public class CheckersMain
 
         p1AccuracyMod = 0;
         p2AccuracyMod = 0;
-        //p1BestBoard = 0;
-        //p2BestBoard = 0;
-        //p1WorstBoard = 1;
-        //p2WorstBoard = 1;
+
         p1PlayerBoardRatings = new List<float>();
         p1EnemyBoardRatings = new List<float>();
         p2PlayerBoardRatings = new List<float>();
@@ -240,7 +237,7 @@ public class CheckersMain
     public bool Update()
     {
 
-        if ((p1Side == activeSide && (p1Type == PlayerType.AI || p1Type == PlayerType.DynamicAI)) || (3 - p1Side == activeSide && (p2Type == PlayerType.AI || p2Type == PlayerType.DynamicAI)))
+        if ((p1Side == activeSide && p1Type != PlayerType.Human) || (3 - p1Side == activeSide && p2Type != PlayerType.Human))
         {
             ProcessDynamicAI();
             ProcessAITurn();
@@ -364,32 +361,40 @@ public class CheckersMain
 
     void UpdateTournament()
     {
-        RecalculateDynamicAI();
+
+        RecalculateAccuracyMod();
+
+        if (p1Type != PlayerType.AI && p1Type != PlayerType.Human)
+        {
+            float avDiff = FindAverageDiff(p1PlayerBoardRatings, p1EnemyBoardRatings);
+            Debug.Log("AvDiff: " + avDiff);
+        }
 
         if (p1Side == winner)
         {
-            //if (gamesComplete > 5)
                 p1Wins++;         
         }
         else if (3 - p1Side == winner)
         {
-            //if (gamesComplete > 5)
                 p2Wins++;
         }
 
         gamesComplete++;
         p1Side = 3 - p1Side;
 
-        //presetFirstMove++;
+        if (p1Type != PlayerType.ADRNG && p2Type != PlayerType.ADRNG && p1Type != PlayerType.Dynamic3 && p2Type != PlayerType.Dynamic3)
+            presetFirstMove++;
+
         if (presetFirstMove >= 7)
             presetFirstMove = 0;
 
-        if (gamesComplete == 30)
+        if ((gamesComplete == 14 && (p1Type == PlayerType.AI || p1Type == PlayerType.Human) && (p2Type == PlayerType.Human || p2Type == PlayerType.AI)) || gamesComplete == 25)
         {
             gameActive = false;
             EventManager.TriggerEvent("boardUpdated");
             EventManager.TriggerEvent("tournamentComplete");
         }
+        
     }
 
     private void ProcessDynamicAI()
@@ -397,12 +402,15 @@ public class CheckersMain
         FFData temp;
         if (activeSide == p1Side)
         {
-            if (p1Type == PlayerType.DynamicAI)
+            if (p1Type != PlayerType.AI)
             {
                 float boardRating = AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork);
+                if (gamesComplete == 0 && firstTurn && p1Type == PlayerType.Dynamic3)
+                    p1AccuracyMod = 1 - boardRating;
+
                 p1PlayerBoardRatings.Add(boardRating);
             }
-            if (p2Type == PlayerType.DynamicAI)
+            if (p2Type != PlayerType.AI)
             {
                 p2EnemyBoardRatings.Add(AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p2NeuralNetwork));
             }
@@ -410,34 +418,35 @@ public class CheckersMain
         else if (activeSide == 3 - p1Side)
         {
 
-            if (p2Type == PlayerType.DynamicAI)
+            if (p2Type != PlayerType.AI)
             {
                 float boardRating = AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p2NeuralNetwork);
+                if (gamesComplete == 0 && firstTurn && p2Type == PlayerType.Dynamic3)
+                    p2AccuracyMod = 1 - boardRating;
+
                 p2PlayerBoardRatings.Add(boardRating);
             }
-            if (p1Type == PlayerType.DynamicAI)
+            if (p1Type != PlayerType.AI)
             {
                 p1EnemyBoardRatings.Add(AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork));
             }
         }
     }
 
-    private void RecalculateDynamicAI()
+    private void RecalculateAccuracyMod()
     {
-        if (p1Type == PlayerType.DynamicAI)
+        if (p1Type == PlayerType.ADRNG || p1Type == PlayerType.Dynamic3)
         {
-            float avDiff = ListAverage(p1PlayerBoardRatings) - ListAverage(p1EnemyBoardRatings);
-            Debug.Log("AvDiff: " + avDiff);
+            float avDiff = FindAverageDiff(p1PlayerBoardRatings,p1EnemyBoardRatings);
             if (avDiff < 0) avDiff = avDiff / 2;
-            p1AccuracyMod = Mathf.Max(0, (0.9f * p1AccuracyMod) + 0.2f * avDiff);         
+            p1AccuracyMod = Mathf.Max(0, (0.95f * p1AccuracyMod) + 0.2f * avDiff);         
             Debug.Log("P1 Accuracy modifier: " + p1AccuracyMod);
         }
-        if (p2Type == PlayerType.DynamicAI)
+        if (p2Type == PlayerType.ADRNG || p2Type == PlayerType.Dynamic3)
         {
-            float avDiff = ListAverage(p2PlayerBoardRatings) - ListAverage(p2EnemyBoardRatings);
-            Debug.Log("AvDiff: " + avDiff);
+            float avDiff = FindAverageDiff(p2PlayerBoardRatings, p2EnemyBoardRatings);
             if (avDiff < 0) avDiff = avDiff / 2;
-            p2AccuracyMod = Mathf.Max(0, (0.9f * p2AccuracyMod) + 0.2f * avDiff);
+            p2AccuracyMod = Mathf.Max(0, (0.95f * p2AccuracyMod) + 0.2f * avDiff);
             Debug.Log("P2 Accuracy modifier: " + p2AccuracyMod);
         }
     }
@@ -475,11 +484,19 @@ public class CheckersMain
             accuracyMod = p2AccuracyMod;
         }
 
-        PlayerType otherPlayer;
-        if (activeSide == p1Side) otherPlayer = p2Type;
-        else otherPlayer = p1Type;
+        PlayerType otherPlayer, currentPlayer;
+        if (activeSide == p1Side)
+        {
+            currentPlayer = p1Type;
+            otherPlayer = p2Type;
+        }
+        else
+        {
+            currentPlayer = p2Type;
+            otherPlayer = p1Type;
+        }
 
-        if (AiBehaviour.PerformTurn(boardState, activeSide, otherPlayer, firstTurn, out chosenMove, ref net, searchDepth, presetFirstMove, accuracyMod))
+        if (AiBehaviour.PerformTurn(boardState, activeSide,currentPlayer, otherPlayer, firstTurn, out chosenMove, ref net, searchDepth, presetFirstMove, accuracyMod))
         {
             if (chosenMove.stoneCaptured)
             {
@@ -613,14 +630,14 @@ public class CheckersMain
         return validMoves;
     }
 
-    public float ListAverage(List<float> _list)
+    public float FindAverageDiff(List<float> _list1,List<float> _list2)
     {
         float returnVal = 0;
-        for (int i = 0; i < _list.Count; i++)
+        for (int i = 0; i < _list1.Count && i < _list2.Count; i++)
         {
-            returnVal += _list[i];
+            returnVal += _list1[i] - _list2[i];
         }
-        return returnVal / _list.Count;
+        return returnVal / _list1.Count;
     }
 
     public void AttemptMove(StoneMove _move)
