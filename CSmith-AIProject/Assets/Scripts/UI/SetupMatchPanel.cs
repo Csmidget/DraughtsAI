@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
 
 public class SetupMatchPanel : MonoBehaviour {
 
@@ -23,6 +24,9 @@ public class SetupMatchPanel : MonoBehaviour {
     [SerializeField]
     Text p2nnFileName;
 
+    [SerializeField]
+    Text gameCount;
+
     public void Start()
     {
         EventManager.RegisterToEvent("tournamentComplete", Reactivate);
@@ -40,6 +44,7 @@ public class SetupMatchPanel : MonoBehaviour {
 
         int p1SearchDepthVal = 0;
         int p2SearchDepthVal = 0;
+        int gameCountVal;
 
         switch(p1Type.text)
         {
@@ -94,7 +99,18 @@ public class SetupMatchPanel : MonoBehaviour {
             }
         }
 
-        GameManager.GetActive().InitTournamentGame(p1TypeVal, p2TypeVal, p1SearchDepthVal, p2SearchDepthVal, p1nnFileName.text, p2nnFileName.text);
+        if (!int.TryParse(gameCount.text, out gameCountVal))
+        {
+            gameCountVal = 1;
+        }
+
+        if (!File.Exists("NetWeights\\" + p1nnFileName.text) && p1nnFileName.text != "")
+            return;
+
+        if (!File.Exists("NetWeights\\" + p2nnFileName.text) && p2nnFileName.text != "")
+            return;
+
+        GameManager.GetActive().InitTournament(p1TypeVal, p2TypeVal, p1SearchDepthVal, p2SearchDepthVal, p1nnFileName.text, p2nnFileName.text,gameCountVal);
         gameObject.SetActive(false);
     }
 

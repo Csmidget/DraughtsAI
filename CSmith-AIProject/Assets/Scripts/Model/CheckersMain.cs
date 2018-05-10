@@ -20,19 +20,14 @@ public class CheckersMain
 
     //Tournament variables
     private bool tournament = false;
-    int maxGames = 15;
+    int maxGames = 14;
     int p1Wins = 0;
     int p2Wins = 0;
     int presetFirstMove = -1;
 
     float p1AccuracyMod = 0;
     float p2AccuracyMod = 0;
-    //float p1BaseLine;
-    //float p2BaseLine;
-    //float p1BestBoard = 0;
-    //float p2BestBoard = 0;
-    //float p1WorstBoard = 1;
-    //float p2WorstBoard = 1;
+
     List<float> p1PlayerBoardRatings;
     List<float> p1EnemyBoardRatings;
     List<float> p2PlayerBoardRatings;
@@ -118,13 +113,14 @@ public class CheckersMain
     /// Generates initial board state and prepares for new game.
     /// </summary>
     /// <returns></returns>
-    public bool InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName)
+    public bool InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName,int _gameCount)
     {
         tournament = true;
         p1Type = _p1Type;
         p2Type = _p2Type;
         p1SearchDepth = _p1SearchDepth;
         p2SearchDepth = _p2SearchDepth;
+        maxGames = _gameCount;
 
         if (p1Type != PlayerType.Human)
         {
@@ -349,7 +345,7 @@ public class CheckersMain
             trainingWins = 0;
             controlWins = 0;
         }
-        if (gamesComplete == maxIterations)
+        if (gamesComplete >= maxIterations)
         {
             gameActive = false;
             EventManager.TriggerEvent("trainingComplete");
@@ -388,7 +384,7 @@ public class CheckersMain
         if (presetFirstMove >= 7)
             presetFirstMove = 0;
 
-        if ((gamesComplete == 14 && (p1Type == PlayerType.AI || p1Type == PlayerType.Human) && (p2Type == PlayerType.Human || p2Type == PlayerType.AI)) || gamesComplete == 25)
+        if (gamesComplete >= maxGames)
         {
             gameActive = false;
             EventManager.TriggerEvent("boardUpdated");
@@ -402,7 +398,7 @@ public class CheckersMain
         FFData temp;
         if (activeSide == p1Side)
         {
-            if (p1Type != PlayerType.AI)
+            if (p1Type != PlayerType.AI && p1Type != PlayerType.Human)
             {
                 float boardRating = AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork);
                 if (gamesComplete == 0 && firstTurn && p1Type == PlayerType.Dynamic3)
@@ -410,7 +406,7 @@ public class CheckersMain
 
                 p1PlayerBoardRatings.Add(boardRating);
             }
-            if (p2Type != PlayerType.AI)
+            if (p2Type != PlayerType.AI && p2Type != PlayerType.Human)
             {
                 p2EnemyBoardRatings.Add(AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p2NeuralNetwork));
             }
@@ -418,7 +414,7 @@ public class CheckersMain
         else if (activeSide == 3 - p1Side)
         {
 
-            if (p2Type != PlayerType.AI)
+            if (p2Type != PlayerType.AI && p2Type != PlayerType.Human)
             {
                 float boardRating = AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p2NeuralNetwork);
                 if (gamesComplete == 0 && firstTurn && p2Type == PlayerType.Dynamic3)
@@ -426,7 +422,7 @@ public class CheckersMain
 
                 p2PlayerBoardRatings.Add(boardRating);
             }
-            if (p1Type != PlayerType.AI)
+            if (p1Type != PlayerType.AI && p1Type != PlayerType.Human)
             {
                 p1EnemyBoardRatings.Add(AiBehaviour.GetBoardRating(boardState, activeSide, out temp, ref p1NeuralNetwork));
             }

@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public enum PlayerType {Human,AI,ADRNG,DROSAS,Dynamic3}
@@ -181,14 +180,14 @@ public class GameManager : MonoBehaviour {
         return player2;
     }
 
-    public void InitTournamentGame(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName)
+    public void InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName,int _gameCount)
     {
         model = new CheckersMain(PlayerType.AI, PlayerType.AI);
         player1 = _p1Type;
         player2 = _p2Type;
         training = false;
         tournament = true;
-        model.InitTournament(_p1Type,_p2Type, _p1SearchDepth, _p2SearchDepth,  _p1nnFileName,  _p2nnFileName);
+        model.InitTournament(_p1Type,_p2Type, _p1SearchDepth, _p2SearchDepth,  _p1nnFileName,  _p2nnFileName,_gameCount);
         model.gameActive = true;
     }
 
