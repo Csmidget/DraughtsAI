@@ -34,8 +34,8 @@ public class TounamentData : MonoBehaviour {
 	
 	// Update is called once per frame
 	void RunUpdate () {
-        if (p1Type != activeManager.GetP1Type() ||
-            p2Type != activeManager.GetP2Type() ||
+        if (p1Type != activeManager.Getp1Type() ||
+            p2Type != activeManager.Getp2Type() ||
             p1Wins != activeManager.GetP1Wins() ||
             p2Wins != activeManager.GetP2Wins() ||
             p1Side != activeManager.GetP1Side())
@@ -45,8 +45,8 @@ public class TounamentData : MonoBehaviour {
     void UpdateValues()
     {
 
-        p1Type = activeManager.GetP1Type();
-        p2Type = activeManager.GetP2Type();
+        p1Type = activeManager.Getp1Type();
+        p2Type = activeManager.Getp2Type();
         p1Wins = activeManager.GetP1Wins();
         p2Wins = activeManager.GetP2Wins();
 
@@ -56,8 +56,8 @@ public class TounamentData : MonoBehaviour {
             p1String = "ADRNG";
         else if (p1Type == PlayerType.DROSAS)
             p1SideString = "DROSAS";
-        else if (p1Type == PlayerType.Dynamic3)
-            p1SideString = "Dynamic3";
+        else if (p1Type == PlayerType.ADRAS)
+            p1SideString = "ADRAS";
         else if (p1Type == PlayerType.Human)
             p1String = "Human";
 
@@ -67,8 +67,8 @@ public class TounamentData : MonoBehaviour {
             p2String = "ADRNG";
         else if (p2Type == PlayerType.DROSAS)
             p2SideString = "DROSAS";
-        else if (p1Type == PlayerType.Dynamic3)
-            p2SideString = "Dynamic3";
+        else if (p1Type == PlayerType.ADRAS)
+            p2SideString = "ADRAS";
         else if (p2Type == PlayerType.Human)
             p2String = "Human";
 

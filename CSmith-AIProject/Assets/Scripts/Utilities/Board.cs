@@ -211,7 +211,7 @@ public class Board {
     public int GetCapThreats(int _activePlayer)
     {
         int ret = 0;
-        List<StoneMove> foundMoves = AiBehaviour.FindAllValidMoves(this, _activePlayer);
+        List<StoneMove> foundMoves = AI.FindAllValidMoves(this, _activePlayer,true);
         foreach (StoneMove s in foundMoves)
         {
             if (s.stoneCaptured)
@@ -219,7 +219,7 @@ public class Board {
 
             Board newBoard = Clone();
             newBoard.ResolveMove(s);
-            List<StoneMove> enemyMoves = AiBehaviour.FindAllValidMoves(newBoard, 3 - _activePlayer);
+            List<StoneMove> enemyMoves = AI.FindAllValidMoves(newBoard, 3 - _activePlayer,true);
             bool capped = false;
             foreach (StoneMove s2 in enemyMoves)
             {
@@ -234,7 +234,7 @@ public class Board {
                 bool furtherCapFound = false;
                 bool firstCap = true;
                 List<StoneMove> furtherMoves = new List<StoneMove>();
-                AiBehaviour.FindValidMoves(newBoard, s.endPos, ref furtherCapFound, ref firstCap, ref furtherMoves);
+                AI.FindValidMoves(newBoard, s.endPos, ref furtherCapFound, ref firstCap,  furtherMoves,true);
 
                 if (furtherCapFound)
                 {

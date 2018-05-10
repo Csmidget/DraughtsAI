@@ -1,26 +1,22 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public enum PlayerType {Human,AI,ADRNG,DROSAS,Dynamic3}
+public enum PlayerType {Human,AI,ADRNG,DROSAS,ADRAS}
 
 
 public class GameManager : MonoBehaviour {
 
     private static GameManager activeManager;
 
-    private CheckersMain model = new CheckersMain(PlayerType.AI,PlayerType.AI);
+    private CheckersMain model = new CheckersMain();
 
-    /// <summary>
-    /// Define player 1's player type. This will control how this players turn is executed.
-    /// </summary>
+    // Define player 1's player type. This will control how this players turn is executed.
     [SerializeField]
     private PlayerType player1;
-    /// <summary>
-    /// Define player 2's player type. This will control how this players turn is executed.
-    /// </summary>
+
+    // Define player 2's player type. This will control how this players turn is executed.
     [SerializeField]
     private PlayerType player2;
-
 
     private bool training = false;
     private bool tournament = false;
@@ -54,6 +50,48 @@ public class GameManager : MonoBehaviour {
             model.Update();
         }
 	}
+
+    public void InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName, int _gameCount)
+    {
+        model = new CheckersMain();
+        player1 = _p1Type;
+        player2 = _p2Type;
+        training = false;
+        tournament = true;
+        model.InitTournament(_p1Type, _p2Type, _p1SearchDepth, _p2SearchDepth, _p1nnFileName, _p2nnFileName, _gameCount);
+        model.gameActive = true;
+    }
+
+    public void InitTrainingGame(double _alpha, double _lambda, int _maxIterations, string _nnFileName, int _searchDepth)
+    {
+        model = new CheckersMain();
+        player1 = PlayerType.AI;
+        player2 = PlayerType.AI;
+        training = true;
+        tournament = false;
+        model.InitTraining(_alpha, _lambda, _maxIterations, _nnFileName, _searchDepth);
+        model.gameActive = true;
+    }
+
+    public void RevertTurn()
+    {
+        model.RevertTurn();
+    }
+
+    public void NewGame()
+    {
+        model.InitNewGame();
+    }
+
+    public void AttemptMove(StoneMove _move)
+    {
+        model.AttemptMove(_move);
+    }
+
+    public bool IsTraining()
+    {
+        return training;
+    }
 
     /// <summary>
     /// Returns the current active GameManager. Saves looking up within scene.
@@ -89,11 +127,6 @@ public class GameManager : MonoBehaviour {
         }
     }
 
-    public void RevertTurn()
-    {
-        model.RevertTurn();
-    }
-
     public Board GetBoardState()
     {
             return model.GetBoardState();
@@ -102,11 +135,6 @@ public class GameManager : MonoBehaviour {
     public List<StoneMove> GetValidMoves(int _startPos)
     {
             return model.GetValidMoves(_startPos);
-    }
-
-    public void AttemptMove(StoneMove _move)
-    {
-            model.AttemptMove(_move);
     }
 
     public List<StoneMove> GetAllValidMoves()
@@ -119,36 +147,31 @@ public class GameManager : MonoBehaviour {
          return model.GetWinner();
     }
 
-    public void NewGame()
-    {
-         model.InitNewGame();
-    }
-
-    public void Quit()
-    {
-        System.Diagnostics.Process.GetCurrentProcess().Kill();
-    }
-
     public int GetTrainingWins()
     {
         return model.GetTrainingWins();
     }
+
     public int GetControlWins()
     {
         return model.GetControlWins();
     }
+
     public int GetTotalTrainingWins()
     {
         return model.GetTotalTrainingWins();
     }
+
     public int GetTotalControlWins()
     {
         return model.GetTotalControlWins();
     }
+
     public int GetGamesComplete()
     {
         return model.GetGamesComplete();
     }
+
     public int GetCurrentTrainingSide()
     {
 
@@ -160,52 +183,26 @@ public class GameManager : MonoBehaviour {
         return model.GetControlUpdates();
     }
 
-    public bool IsTraining()
-    {
-        return training;
-    }
-
     public bool IsTournament()
     {
         return tournament;
     }
 
-    public PlayerType GetP1Type()
+    public PlayerType Getp1Type()
     {
         return player1;
     }
 
-    public PlayerType GetP2Type()
+    public PlayerType Getp2Type()
     {
         return player2;
-    }
-
-    public void InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName,int _gameCount)
-    {
-        model = new CheckersMain(PlayerType.AI, PlayerType.AI);
-        player1 = _p1Type;
-        player2 = _p2Type;
-        training = false;
-        tournament = true;
-        model.InitTournament(_p1Type,_p2Type, _p1SearchDepth, _p2SearchDepth,  _p1nnFileName,  _p2nnFileName,_gameCount);
-        model.gameActive = true;
-    }
-
-    public void InitTrainingGame(double _alpha,double _lambda,int _maxIterations,string _nnFileName,int _searchDepth)
-    {
-        model = new CheckersMain(PlayerType.AI, PlayerType.AI);
-        player1 = PlayerType.AI;
-        player2 = PlayerType.AI;
-        training = true;
-        tournament = false;
-        model.InitTraining(_alpha, _lambda, _maxIterations, _nnFileName, _searchDepth);
-        model.gameActive = true;
     }
 
     public int GetP1Wins()
     {
         return model.GetP1Wins();
     }
+
     public int GetP2Wins()
     {
         return model.GetP2Wins();
@@ -214,5 +211,10 @@ public class GameManager : MonoBehaviour {
     public int GetP1Side()
     {
         return model.GetP1Side();
+    }
+
+    public void Quit()
+    {
+        System.Diagnostics.Process.GetCurrentProcess().Kill();
     }
 }

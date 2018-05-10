@@ -19,7 +19,7 @@ public class BoardNode
         boardState = _boardState.Clone();
         activePlayer = _activePlayer;
         childNodes = new List<BoardNode>();
-        validMoves = AiBehaviour.FindAllValidMoves(boardState, activePlayer);
+        validMoves = AI.FindAllValidMoves(boardState, activePlayer,true);
         endNode = true;
         moveMade = null;
         valueCalculated = false;
@@ -30,7 +30,7 @@ public class BoardNode
         boardState = _boardState.Clone();
         activePlayer = _activePlayer;
         childNodes = new List<BoardNode>();
-        validMoves = AiBehaviour.FindAllValidMoves(boardState, activePlayer);
+        validMoves = AI.FindAllValidMoves(boardState, activePlayer,true);
         endNode = true;
         moveMade = _moveMade;
         valueCalculated = false;
@@ -41,7 +41,7 @@ public class BoardNode
         boardState = _boardState.Clone();
         activePlayer = _activePlayer;
         childNodes = new List<BoardNode>();
-        validMoves = AiBehaviour.FindAllValidMoves(boardState, activePlayer);
+        validMoves = AI.FindAllValidMoves(boardState, activePlayer,true);
         System.Random rnd = new System.Random();
         validMoves = validMoves.OrderBy(item => rnd.Next()).ToList();
         endNode = true;
@@ -85,10 +85,10 @@ public class BoardNode
         return endNode;
     }
 
-    public double GetValue(NeuralNetwork net)
+    public double GetValue(AI _player)
     {
         valueCalculated = true;
-        return AiBehaviour.GetBoardRating(boardState, activePlayer, out nnData, ref net);
+        return _player.GetBoardRating(boardState, activePlayer, out nnData);
     }
     public FFData GetData()
     {

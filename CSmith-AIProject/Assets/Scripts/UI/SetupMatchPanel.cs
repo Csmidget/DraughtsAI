@@ -57,8 +57,8 @@ public class SetupMatchPanel : MonoBehaviour {
             case "DROSAS AI":
                 p1TypeVal = PlayerType.DROSAS;
                 break;
-            case "Dynamic3":
-                p1TypeVal = PlayerType.Dynamic3;
+            case "ADRAS AI":
+                p1TypeVal = PlayerType.ADRAS;
                 break;
             default:
                 p1TypeVal = PlayerType.Human;
@@ -75,8 +75,8 @@ public class SetupMatchPanel : MonoBehaviour {
             case "DROSAS AI":
                 p2TypeVal = PlayerType.DROSAS;
                 break;
-            case "Dynamic3":
-                p2TypeVal = PlayerType.Dynamic3;
+            case "ADRAS AI":
+                p2TypeVal = PlayerType.ADRAS;
                 break;
             default:
                 p2TypeVal = PlayerType.Human;

@@ -1,26 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 using System.Linq;
-using System.Threading;
 
-public class AiBehaviour {
 
-    static int[] doubleDiagonals = new int[8] { 0, 4, 5, 9, 25, 29, 30, 34};
-    static int[] centreTiles = new int[2] {11, 23};
-    static int[] centreDoubleDiagonals = new int[6] {10, 14, 15, 19, 20, 24 };
-    static int[] otherTiles = new int[16] { 1, 2, 3, 6, 7, 12, 13, 16, 18, 21, 22, 27, 28, 31, 32, 33 };
+public class AI {
 
-    static List<BoardNode> boardNodes;
-    static List<double> computeTime = new List<double>();
-    static List<BoardNode> dynamic3MoveList = new List<BoardNode>();
-    static float[] InitBoardVal = new float[2]{ 0, 0 };
+    public static readonly int[] doubleDiagonals = new int[8] { 0, 4, 5, 9, 25, 29, 30, 34};
+    public static readonly int[] centreTiles = new int[2] {11, 23};
+    public static readonly int[] centreDoubleDiagonals = new int[6] {10, 14, 15, 19, 20, 24 };
+    public static readonly int[] otherTiles = new int[16] { 1, 2, 3, 6, 7, 12, 13, 16, 18, 21, 22, 27, 28, 31, 32, 33 };
+    protected static List<BoardNode> boardNodes;
+    protected static float[] InitBoardVal = new float[2] { 0, 0 };
 
-    static public bool PerformTurn(Board _currentBoard, int _aiPlayer,PlayerType currentPlayer, PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, ref NeuralNetwork net, int _searchDepth, int presetFirstMove, float _accuracyMod)
+    protected NeuralNetwork net;
+
+    protected List<float> playerBoardRatings = new List<float>();
+    protected List<float> enemyBoardRatings = new List<float>();
+    protected float accuracyMod = 0;
+    protected int searchDepth = 6;
+
+    public void NewGame()
     {
-        if (currentPlayer == PlayerType.Dynamic3)
-            dynamic3MoveList.Clear();
+        playerBoardRatings = new List<float>();
+        enemyBoardRatings = new List<float>();
+    }
+
+    public virtual bool PerformTurn(Board _currentBoard, int _aiPlayer, PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, int _presetFirstMove)
+    {
 
         if (boardNodes == null)
             boardNodes = new List<BoardNode>();
@@ -28,15 +35,13 @@ public class AiBehaviour {
         Search.iterations = 0;
         _move = new StoneMove();
 
-        List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer);
+        List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer,true);
 
         System.Random rnd = new System.Random();
         List<StoneMove> shuffledList = possibleMoves.OrderBy(item => rnd.Next()).ToList();
 
         if (shuffledList.Count > 0)
         {
-          //   Stopwatch stopWatch = new Stopwatch();
-          //   stopWatch.Start();
 
             StoneMove selectedMove = possibleMoves[0];
             float selectedMoveValue = -Mathf.Infinity;
@@ -44,13 +49,13 @@ public class AiBehaviour {
             if (_firstTurn)
             {
                 FFData temp;
-                float boardVal = GetBoardRating(_currentBoard, _aiPlayer,out temp, ref net);
+                float boardVal = GetBoardRating(_currentBoard, _aiPlayer,out temp);
                 InitBoardVal[_aiPlayer - 1] = boardVal;
                 if (_aiPlayer == 1)
                 {
-                    if (presetFirstMove >= 0 && presetFirstMove < possibleMoves.Count)
+                    if (_presetFirstMove >= 0 && _presetFirstMove < possibleMoves.Count)
                     {
-                        _move = possibleMoves[presetFirstMove];
+                        _move = possibleMoves[_presetFirstMove];
                     }
                     else
                         _move = shuffledList.First();
@@ -106,23 +111,11 @@ public class AiBehaviour {
                     float moveValue = Mathf.NegativeInfinity;
                     if (!prevStateFound)
                     {
-                        if (currentPlayer == PlayerType.ADRNG)
-                            moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, _accuracyMod);
-                        else
-                            moveValue = Search.TraverseNodeList(bn, _searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, ref net, 0);
+                        moveValue = Search.TraverseNodeList(bn, searchDepth - 1, Mathf.NegativeInfinity, Mathf.Infinity, _aiPlayer, false, this, 0);
                     }
 
-                    if (currentPlayer == PlayerType.Dynamic3 && moveValue >= 1 - _accuracyMod)
-                    {
-                        dynamic3MoveList.Add(bn);
-                    }
-                    else if (currentPlayer == PlayerType.DROSAS && (Mathf.Abs(InitBoardVal[_aiPlayer-1] - moveValue) < Mathf.Abs(InitBoardVal[_aiPlayer - 1] - selectedMoveValue) || moveValue >= 1) && selectedMoveValue < 1)
-                    {
-                        selectedMove = bn.GetMoveMade();
-                        selectedMoveValue = moveValue;
-                    }
 
-                    if ((currentPlayer == PlayerType.AI || currentPlayer == PlayerType.ADRNG || currentPlayer == PlayerType.Dynamic3) && moveValue > selectedMoveValue)
+                    if (moveValue > selectedMoveValue)
                     {
                         selectedMove = bn.GetMoveMade();
                         selectedMoveValue = moveValue;
@@ -142,28 +135,6 @@ public class AiBehaviour {
                     boardNodes = newNodeList;
                 }
             }
-            /*
-                        if (_aiPlayer == GameManager.GetActive().GetP1Side())
-                        { 
-                         UnityEngine.Debug.Log("Selected move with value: " + selectedMoveValue);
-                        }
-                        UnityEngine.Debug.Log("iterations: " + Search.iterations);
-                        stopWatch.Stop();
-                        computeTime.Add(stopWatch.Elapsed.TotalSeconds);
-                        double averageCompute = 0;
-
-                        foreach (double d in computeTime)
-                        {
-                            averageCompute += d;
-                        }
-                        averageCompute = averageCompute / computeTime.Count;
-                        UnityEngine.Debug.Log("Average Turn time: " + averageCompute);
-                        UnityEngine.Debug.Log("Turn time:" + stopWatch.Elapsed);
-            */
-            if (currentPlayer == PlayerType.Dynamic3 && selectedMoveValue > 1 - _accuracyMod)
-            {
-                selectedMove = dynamic3MoveList.OrderBy(item => rnd.Next()).First().GetMoveMade();
-            }
 
             _move = selectedMove;
             return true;
@@ -171,12 +142,12 @@ public class AiBehaviour {
         else
         {
             FFData data;
-            GetBoardRating(_currentBoard, _aiPlayer, out data, ref net);
+            GetBoardRating(_currentBoard, _aiPlayer, out data);
             return false;
         }
     }
 
-    static public List<StoneMove> FindAllValidMoves(Board _board, int _activePlayer)
+    public static List<StoneMove> FindAllValidMoves(Board _board, int _activePlayer, bool _capChains)
     {
         List<StoneMove> moves = new List<StoneMove>();
         bool firstCap = true;
@@ -187,13 +158,13 @@ public class AiBehaviour {
         {
             if (_board.state[i] != TileState.Empty && _activePlayer == _board.GetOwner(i))
             {
-                FindValidMoves(_board, i, ref captureFound, ref firstCap, ref moves);
+                FindValidMoves(_board, i, ref captureFound, ref firstCap,  moves, _capChains);
             }
         }
         return moves;
     }
 
-    static public void FindValidMoves(Board _board, int _startPos,ref bool _captureFound, ref bool _firstCap, ref List<StoneMove> _moves)
+    public static void FindValidMoves(Board _board, int _startPos,ref bool _captureFound, ref bool _firstCap, List<StoneMove> _moves, bool _capChains)
     {
         int owner = _board.GetOwner(_startPos);
         //Find the state of the current tile. Used to check ownership.
@@ -207,18 +178,18 @@ public class AiBehaviour {
         //Blacks move up the board. Kings can also move up the board
         if (state == TileState.BlackPiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            TestMove(_board, owner, _startPos, _startPos + 4, ref _captureFound, ref _firstCap, ref _moves);
-            TestMove(_board, owner, _startPos, _startPos + 5, ref _captureFound, ref _firstCap, ref _moves);
+            TestMove(_board, owner, _startPos, _startPos + 4, ref _captureFound, ref _firstCap,  _moves, _capChains);
+            TestMove(_board, owner, _startPos, _startPos + 5, ref _captureFound, ref _firstCap,  _moves, _capChains);
         }
         //Whites move down the board. Kings can also move down the board
         if (state == TileState.WhitePiece || state == TileState.BlackKing || state == TileState.WhiteKing)
         {
-            TestMove(_board, owner, _startPos, _startPos - 4, ref _captureFound, ref _firstCap, ref _moves);
-            TestMove(_board, owner, _startPos, _startPos - 5, ref _captureFound, ref _firstCap, ref _moves);
+            TestMove(_board, owner, _startPos, _startPos - 4, ref _captureFound, ref _firstCap,  _moves,  _capChains);
+            TestMove(_board, owner, _startPos, _startPos - 5, ref _captureFound, ref _firstCap,  _moves,  _capChains);
         }
     }
 
-    static private bool TestMove(Board _board, int _owner, int _startPos, int _movePos, ref bool _captureFound, ref bool _firstCap, ref List<StoneMove> _moves)
+    protected static bool TestMove(Board _board, int _owner, int _startPos, int _movePos, ref bool _captureFound, ref bool _firstCap, List<StoneMove> _moves, bool _capChains)
     {
 
         //First ensure target position is within the bounds of the board.
@@ -264,7 +235,10 @@ public class AiBehaviour {
                 _firstCap = false;
             }
             StoneMove _move = new StoneMove(_startPos, endPos, true, _movePos);
-            if (!TestFurtherMoves(_board,_owner, _move, ref _moves))
+
+            if (!_capChains)
+                _moves.Add(_move);
+            else if (!TestFurtherMoves(_board,_owner, _move, ref _moves))
                 _moves.Add(_move);
 
             return true;
@@ -339,7 +313,7 @@ public class AiBehaviour {
             return true;
     }
 
-    static public float GetBoardRating(Board board, int _activePlayer,out FFData data, ref NeuralNetwork net)
+    public float GetBoardRating(Board board, int _activePlayer,out FFData data)
     {
 
         //pieceAdvantage        : 0;
@@ -493,5 +467,58 @@ public class AiBehaviour {
         UnityEngine.Debug.Log("enemystoneCount: "           + data.input[12]);
         UnityEngine.Debug.Log("kingCount: "                 + data.input[13]);
         UnityEngine.Debug.Log("enemyKingCount: "            + data.input[14]);
+    }
+
+    public virtual float RecalculateAccuracyMod() { return 0; }
+
+    public virtual void ADRASInit(Board _board, int _activeSide) { }
+
+    public virtual void ProcessDynamicAI(Board _board, int _activeSide, bool _isActivePlayer) { }
+
+    public virtual void PrintAverageDifference() { }
+
+    public void SetSearchDepth(int _searchDepth)
+    {
+        searchDepth = _searchDepth;
+    }
+
+    public void SetNeuralNetwork()
+    {
+        net = new NeuralNetwork();
+    }
+
+    public void SetNeuralNetwork(string _netName)
+    {
+        net = new NeuralNetwork(_netName);
+    }
+
+    public void SetNeuralNetwork(NeuralNetwork _net)
+    {
+        net = _net.Copy();
+    }
+
+    public NeuralNetwork GetNeuralNetwork()
+    {
+        return net;
+    }
+
+    public void ResetNNTraceValues()
+    {
+        net.ResetTraceValues();
+    }
+
+    public void SaveNetToFile(string _filename)
+    {
+        net.SaveToFile(_filename);
+    }
+
+    public virtual PlayerType GetType()
+    {
+        return PlayerType.AI;
+    }
+
+    public void TrainNet(FFData _prevRun, FFData _currRun, double _alpha, double _lambda)
+    {
+        net.BackPropagate(_prevRun, _currRun, _alpha, _lambda);
     }
 }
