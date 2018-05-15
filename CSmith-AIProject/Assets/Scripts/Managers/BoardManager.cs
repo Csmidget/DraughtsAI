@@ -78,7 +78,6 @@ public class BoardManager : MonoBehaviour {
         displayedBoard = gameManager.GetBoardState();
         for (int i = 0; i < 35; i++)
         {
-
                 TileState t = displayedBoard.state[i];
 
                 visualBoard[i] = SetTile(i, t);

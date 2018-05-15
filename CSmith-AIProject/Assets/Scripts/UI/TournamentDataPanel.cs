@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TounamentDataPanel : MonoBehaviour
+public class TournamentDataPanel : MonoBehaviour
 {
 
     // Use this for initialization

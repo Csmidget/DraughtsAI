@@ -3,9 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Search {
-
-    public static int iterations;
-
+    
+    /// <summary>
+    /// Acts similarly to normal alpha beta search but instead of generating new board nodes, traverses existing board node list.
+    /// </summary>
+    /// <param name="_node"></param>
+    /// <param name="_depth"></param>
+    /// <param name="_alpha"></param>
+    /// <param name="_beta"></param>
+    /// <param name="_searchingPlayer"></param>
+    /// <param name="_maximizingPlayer"></param>
+    /// <param name="_player"></param>
+    /// <param name="_accuracyMod"></param>
+    /// <returns></returns>
     static public float TraverseNodeList(BoardNode _node, int _depth, float _alpha, float _beta, int _searchingPlayer, bool _maximizingPlayer,AI _player, float _accuracyMod)
     {
         float v;
@@ -63,12 +73,13 @@ public class Search {
 
     static public float AlphaBeta(BoardNode _node, int _depth, float _alpha,float  _beta,int _searchingPlayer, bool _maximizingPlayer,AI _player, float _accuracyMod)
     {
-        iterations++;
 
         float v;
 
+        //If we have reach the end of the search
         if (_depth == 0 || _node.MoveCount() == 0)
         {
+            //If we are currently on the maximising player then find the board rating and return
             if (_maximizingPlayer)
             {
                 v = (float)_node.GetValue(_player);
@@ -79,6 +90,7 @@ public class Search {
                 }
                 return v;
             }
+            //If we are not currently on the maximising player then jump one extra layer.
             else
             {          
                 v = 1;

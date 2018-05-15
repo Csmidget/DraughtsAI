@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class TounamentData : MonoBehaviour {
+public class TournamentData : MonoBehaviour {
 
     [SerializeField]
     Text valuesText;
@@ -34,6 +34,7 @@ public class TounamentData : MonoBehaviour {
 	
 	// Update is called once per frame
 	void RunUpdate () {
+
         if (p1Type != activeManager.Getp1Type() ||
             p2Type != activeManager.Getp2Type() ||
             p1Wins != activeManager.GetP1Wins() ||
@@ -55,9 +56,9 @@ public class TounamentData : MonoBehaviour {
         else if (p1Type == PlayerType.ADRNG)
             p1String = "ADRNG";
         else if (p1Type == PlayerType.DROSAS)
-            p1SideString = "DROSAS";
+            p1String = "DROSAS";
         else if (p1Type == PlayerType.ADRAS)
-            p1SideString = "ADRAS";
+            p1String = "ADRAS";
         else if (p1Type == PlayerType.Human)
             p1String = "Human";
 
@@ -66,9 +67,9 @@ public class TounamentData : MonoBehaviour {
         else if (p2Type == PlayerType.ADRNG)
             p2String = "ADRNG";
         else if (p2Type == PlayerType.DROSAS)
-            p2SideString = "DROSAS";
+            p2String = "DROSAS";
         else if (p1Type == PlayerType.ADRAS)
-            p2SideString = "ADRAS";
+            p2String = "ADRAS";
         else if (p2Type == PlayerType.Human)
             p2String = "Human";
 

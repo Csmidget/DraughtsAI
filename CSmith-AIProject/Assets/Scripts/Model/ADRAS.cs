@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+//Average Difference Randomized Action Selection
 public class ADRAS : AI {
 
     protected  List<BoardNode> ADRASMoveList = new List<BoardNode>();
@@ -14,7 +15,6 @@ public class ADRAS : AI {
         if (boardNodes == null)
             boardNodes = new List<BoardNode>();
 
-        Search.iterations = 0;
         _move = new StoneMove();
 
         List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer,true);
@@ -140,7 +140,7 @@ public class ADRAS : AI {
 
     public override float RecalculateAccuracyMod()
     {
-        float avDiff = CheckersMain.FindAverageDiff(playerBoardRatings, enemyBoardRatings);
+        float avDiff = FindAverageDiff(playerBoardRatings, enemyBoardRatings);
         if (avDiff < 0) avDiff = avDiff / 2;
         accuracyMod = Mathf.Max(0, (0.95f * accuracyMod) + 0.2f * avDiff);
         return accuracyMod;
@@ -166,7 +166,7 @@ public class ADRAS : AI {
 
     public override void PrintAverageDifference()
     {
-        float avDiff = CheckersMain.FindAverageDiff(playerBoardRatings, enemyBoardRatings);
+        float avDiff = FindAverageDiff(playerBoardRatings, enemyBoardRatings);
         Debug.Log("AvDiff: " + avDiff);
     }
 

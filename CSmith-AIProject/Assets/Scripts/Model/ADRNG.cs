@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+//Average Difference Random Number Generator
 public class ADRNG : AI {
 
     public override bool PerformTurn(Board _currentBoard, int _aiPlayer, PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, int presetFirstMove)
@@ -10,7 +11,6 @@ public class ADRNG : AI {
         if (boardNodes == null)
             boardNodes = new List<BoardNode>();
 
-        Search.iterations = 0;
         _move = new StoneMove();
 
         List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer,true);
@@ -126,7 +126,7 @@ public class ADRNG : AI {
 
     public override float RecalculateAccuracyMod()
     {
-        float avDiff = CheckersMain.FindAverageDiff(playerBoardRatings, enemyBoardRatings);
+        float avDiff = FindAverageDiff(playerBoardRatings, enemyBoardRatings);
         if (avDiff < 0) avDiff = avDiff / 2;
         accuracyMod = Mathf.Max(0, (0.95f * accuracyMod) + 0.2f * avDiff);
         return accuracyMod;
@@ -146,7 +146,7 @@ public class ADRNG : AI {
 
     public override void PrintAverageDifference()
     {
-        float avDiff = CheckersMain.FindAverageDiff(playerBoardRatings, enemyBoardRatings);
+        float avDiff = FindAverageDiff(playerBoardRatings, enemyBoardRatings);
         Debug.Log("AvDiff: " + avDiff);
     }
 

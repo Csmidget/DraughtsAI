@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+//Dumb Reactive Outcome-Sensitive Action Selection
 public class DROSAS : AI {
     public override bool PerformTurn(Board _currentBoard, int _aiPlayer, PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, int presetFirstMove)
     {
@@ -10,7 +11,6 @@ public class DROSAS : AI {
         if (boardNodes == null)
             boardNodes = new List<BoardNode>();
 
-        Search.iterations = 0;
         _move = new StoneMove();
 
         List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer,true);
@@ -137,7 +137,7 @@ public class DROSAS : AI {
 
     public override void PrintAverageDifference()
     {
-        float avDiff = CheckersMain.FindAverageDiff(playerBoardRatings, enemyBoardRatings);
+        float avDiff = FindAverageDiff(playerBoardRatings, enemyBoardRatings);
         Debug.Log("AvDiff: " + avDiff);
     }
 

@@ -4,7 +4,8 @@ F:/University/Individual Project/projectBuild2/Draughts.exe
 SceneListBegin?
 Assets/Scenes/main.unity
 SceneListEnd?
-7361f5d07b969eac8e51600caa746097 Assembly-CSharp.dll:.TounamentData
+0e3fd17459120a326164068235826ead Assembly-CSharp.dll:.BoardRatingText
+7361f5d07b969eac8e51600caa746097 Assembly-CSharp.dll:.TournamentData
 05524b8f659e7bfe5756d1335fec24ba UnityEngine.Timeline.dll:UnityEngine.Timeline.ActivationPlayableAsset
 4b12dd839b2293f8457cd67cc3610b85 UnityEngine.Timeline.dll:UnityEngine.Timeline.ActivationTrack
 8144169769d51429c4aedc8b0f92d47b UnityEngine.Timeline.dll:UnityEngine.Timeline.AnimationPlayableAsset
@@ -121,7 +122,7 @@ c2275a8bfbb9f9942cad75ecdfded41d UnityEngine.HoloLens.dll:UnityEngine.XR.WSA.Spa
 45f3431f0103c41611e8d4eec3d439df UnityEngine.HoloLens.dll:UnityEngine.XR.WSA.SpatialMappingRenderer
 650c1e412dac0323d37ae3023565f947 Assembly-CSharp.dll:.TrainingData
 7fedcc9b06d91874dcc6fe72e9082c5f Assembly-CSharp.dll:.Stone
-188897d6d17cc7670031778bb91e90bd Assembly-CSharp.dll:.SetupMatchPanel
+7254f3d39980734d07bd5c552db3065c Assembly-CSharp.dll:.SetupMatchPanel
 741a71851f14788b68d03ef1a9e4db20 Assembly-CSharp.dll:.SetupPanel
 fc1e0f4d8439d9928083474691511a13 UnityEngine.Networking.dll:UnityEngine.Networking.NetworkAnimator
 05524b8f659e7bfe5756d1335fec24ba UnityEngine.Networking.dll:UnityEngine.Networking.NetworkBehaviour
@@ -137,7 +138,7 @@ e9bdabf9265d758d56f01bb188916fa8 UnityEngine.Networking.dll:UnityEngine.Networki
 3f32f08a64daf40b09ed864d96fe3840 UnityEngine.Networking.dll:UnityEngine.Networking.NetworkTransform
 73843688b51256aed059f049c540bca8 UnityEngine.Networking.dll:UnityEngine.Networking.NetworkTransformChild
 528ea1fd7c01796fc60c4e2f172ea229 UnityEngine.Networking.dll:UnityEngine.Networking.NetworkTransformVisualizer
-05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:.TounamentDataPanel
+05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:.TournamentDataPanel
 05524b8f659e7bfe5756d1335fec24ba UnityEngine.TestRunner.dll:UnityEngine.TestTools.TestRunner.Callbacks.PlayModeRunnerCallback
 96d0fbde9fd209878a0a291f82c9bcdd UnityEngine.TestRunner.dll:UnityEngine.TestTools.TestRunner.PlaymodeTestsController
 64eb32cc721b1cc68a91ed57461e188c UnityEngine.TestRunner.dll:UnityEngine.TestTools.TestRunner.Callbacks.RemoteTestResultSender

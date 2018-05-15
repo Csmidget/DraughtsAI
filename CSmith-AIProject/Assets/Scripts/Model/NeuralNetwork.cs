@@ -89,7 +89,7 @@ public class NeuralNetwork{
         //Populate theta1Arr & theta2Arr with random values
         InitializeRandomTheta();
 
-        //
+        //convert theta arrays into matrices
         theta1 = DenseMatrix.OfArray(theta1Arr);
         theta2 = DenseVector.OfArray(theta2Arr).ToRowMatrix();
 
@@ -142,36 +142,22 @@ public class NeuralNetwork{
         e_theta1 = lambda * e_theta1 + ((1 - newRun.a3[0,0]) * newRun.a3[0,0] * (((1 - newRun.a2.RemoveColumn(0)).PointwiseMultiply(newRun.a2.RemoveColumn(0))).PointwiseMultiply(theta2.RemoveColumn(0)).Transpose()) * newRun.a1);
     }
 
-    public void BackPropagate(double error, FFData currRun, double alpha, double lambda)
-    {
-        //FFData prevRun = prevRuns[prevRuns.Count - 1]; //Get previous run
-        theta2 = theta2 + alpha * (error) * e_theta2.Transpose();
+    //Calculates partial derivatives for weights. No longer necessary
+    //void PartialDerivatives(out Matrix<double> delta1, out Matrix<double> delta2, FFData run, FFData nextRun)
+    //{
+    //    Matrix<double> d3 = run.a3.Subtract(nextRun.a3);
+    //    Matrix<double> tempTheta2 = DenseMatrix.Create(theta2.RowCount, theta2.ColumnCount, 0);
+    //    theta2.CopyTo(tempTheta2);
+    //    tempTheta2 = tempTheta2.RemoveColumn(0);
+    //    Matrix<double> u = MatrixSigmoidGradient(run.z2);
+    //    Matrix<double> d2 = (tempTheta2.TransposeThisAndMultiply(d3));
+    //    d2 = d2.Transpose().PointwiseMultiply(u);
+    //
+    //    delta1 = d2.Transpose().Multiply(run.a1);
+    //    delta2 = d3.Multiply(run.a2);
+    //}
 
-        theta1 = theta1 + alpha * (error) * e_theta1;
-
-        FFData newRun = FeedForward(currRun.input);
-
-        e_theta2 = lambda * e_theta2 + (1 - newRun.a3[0, 0]) * newRun.a3[0, 0] * newRun.a2.Transpose();
-
-        e_theta1 = lambda * e_theta1 + ((1 - newRun.a3[0, 0]) * newRun.a3[0, 0] * (((1 - newRun.a2.RemoveColumn(0)).PointwiseMultiply(newRun.a2.RemoveColumn(0))).PointwiseMultiply(theta2.RemoveColumn(0)).Transpose()) * newRun.a1);
-
-    }
-
-    void PartialDerivatives(out Matrix<double> delta1, out Matrix<double> delta2, FFData run, FFData nextRun)
-    {
-        Matrix<double> d3 = run.a3.Subtract(nextRun.a3);
-        Matrix<double> tempTheta2 = DenseMatrix.Create(theta2.RowCount, theta2.ColumnCount, 0);
-        theta2.CopyTo(tempTheta2);
-        tempTheta2 = tempTheta2.RemoveColumn(0);
-        Matrix<double> u = MatrixSigmoidGradient(run.z2);
-        Matrix<double> d2 = (tempTheta2.TransposeThisAndMultiply(d3));
-        d2 = d2.Transpose().PointwiseMultiply(u);
-
-        delta1 = d2.Transpose().Multiply(run.a1);
-        delta2 = d3.Multiply(run.a2);
-    }
-
-    //Mean squared error cost function
+    //Mean squared error cost function. No longer necessary
     //public Vector<double> CostFunction(FFData prevRun, FFData currRun)
     //{
     //    return 0.5 * prevRun.a3.Subtract(currRun.a3);//Mathf.Pow((float)(prevRun.a3.Subtract(currRun.a3), 2);

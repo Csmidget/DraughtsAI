@@ -15,22 +15,24 @@ public class CheckersMain
 
     public bool gameActive;
 
+    #region TournamentVariables
     //Tournament variables
     private bool tournament = false;
     int maxGames = 14;
     int p1Wins = 0;
     int p2Wins = 0;
+    float p1LastAvgRatingDiff;
+    float p2LastAvgRatingDiff;
     int presetFirstMove = -1;
-    //end of Tournament variables
+    #endregion
 
     private int gamesComplete = 0;
 
-    //Training variables
+    #region  TrainingVariables
     NeuralNetwork netBackup;
 
     private bool training = false;
     private int maxIterations = 1000;
-    private int gamesPerCheck = 20;
 
     private int trainingWins = 0;
     private int controlWins = 0;
@@ -46,7 +48,7 @@ public class CheckersMain
 
     List<FFData> prevRuns;
     FFData currRun;
-    //end of Training Variables
+    #endregion
 
     //Defines which side player 1 is currently playing on (1 = black, 2 = white)
     int p1Side = 1;
@@ -56,15 +58,15 @@ public class CheckersMain
     // Ordered list of all boardstates prior to this one. All completed games are saved.
     static public List<Board> prevStates;
 
-    private float aiTurnDelay;
-
     //True for first full turn of the game (2 Plys) used to randomize first move and to delay backprop whilst there is insufficient data
     private bool firstTurn;
+
+    //flag indicating the current game has finished
     private bool matchOver;
 
     //True if no moves were found when attempting to perform AI move.
     private bool noMovesFound;
-    
+
     // The current board state.
     private Board boardState;
 
@@ -81,12 +83,12 @@ public class CheckersMain
     /// Generates initial board state and prepares for new game.
     /// </summary>
     /// <returns></returns>
-    public bool InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName,int _gameCount)
+    public bool InitTournament(PlayerType _p1Type, PlayerType _p2Type, int _p1SearchDepth, int _p2SearchDepth, string _p1nnFileName, string _p2nnFileName, int _gameCount)
     {
         tournament = true;
         SetupPlayers(_p1Type, _p2Type);
-        p1.SetSearchDepth ( _p1SearchDepth);
-        p2.SetSearchDepth ( _p2SearchDepth);
+        p1.SetSearchDepth(_p1SearchDepth);
+        p2.SetSearchDepth(_p2SearchDepth);
         maxGames = _gameCount;
 
         if (p1.GetType() != PlayerType.Human)
@@ -97,6 +99,9 @@ public class CheckersMain
         {
             p2.SetNeuralNetwork(_p2nnFileName);
         }
+
+        p1LastAvgRatingDiff = 0;
+        p2LastAvgRatingDiff = 0;
 
         training = false;
         prevStates = new List<Board>();
@@ -126,12 +131,13 @@ public class CheckersMain
     /// <param name="_SearchDepth">size of search tree to use</param>
     public void InitTraining(double _alpha, double _lambda, int _maxIterations, string _nnFileName, int _SearchDepth)
     {
-        
+        p1LastAvgRatingDiff = 0;
+        p2LastAvgRatingDiff = 0;
         SetupPlayers(PlayerType.AI, PlayerType.AI);
         alpha = _alpha;
         lambda = _lambda;
-        p1.SetSearchDepth ( _SearchDepth);
-        p2.SetSearchDepth ( _SearchDepth);
+        p1.SetSearchDepth(_SearchDepth);
+        p2.SetSearchDepth(_SearchDepth);
         maxIterations = _maxIterations;
         p1.SetNeuralNetwork(_nnFileName);
         InitNewGame();
@@ -216,23 +222,18 @@ public class CheckersMain
                     UpdateTraining();
                 }
                 else if (tournament)
-                {  
+                {
                     UpdateTournament();
                 }
                 EventManager.TriggerEvent("gameOver");
                 InitNewGame();
             }
         }
-
-        aiTurnDelay -= Time.deltaTime;
-
         return true;
     }
 
     void EndTurn()
     {
-        aiTurnDelay = 0.0f;
-
         if (firstTurn && activeSide == 2) firstTurn = false;
 
         prevStates.Add(boardState.Clone());
@@ -252,9 +253,11 @@ public class CheckersMain
 
         EventManager.TriggerEvent("boardUpdated");
         EventManager.TriggerEvent("turnOver");
-
     }
 
+    /// <summary>
+    /// Runs between games when in training mode, updates training variables. 
+    /// </summary>
     void UpdateTraining()
     {
         if (p1Side == winner)
@@ -308,6 +311,9 @@ public class CheckersMain
         }
     }
 
+    /// <summary>
+    /// Runs between games in tournament mode, updates tournament variables
+    /// </summary>
     void UpdateTournament()
     {
         RecalculateAccuracyMod();
@@ -315,13 +321,16 @@ public class CheckersMain
         p1.PrintAverageDifference();
         p2.PrintAverageDifference();
 
+        p1LastAvgRatingDiff = p1.GetAverageDifference();
+        p2LastAvgRatingDiff = p2.GetAverageDifference();
+
         if (p1Side == winner)
         {
-                p1Wins++;         
+            p1Wins++;
         }
         else if (3 - p1Side == winner)
         {
-                p2Wins++;
+            p2Wins++;
         }
 
         gamesComplete++;
@@ -339,14 +348,17 @@ public class CheckersMain
             EventManager.TriggerEvent("boardUpdated");
             EventManager.TriggerEvent("tournamentComplete");
         }
-        
+
     }
 
+    /// <summary>
+    /// Run any dynamic AI processing during the game
+    /// </summary>
     private void ProcessDynamicAI()
     {
         if (activeSide == 1 && gamesComplete == 0 && firstTurn)
         {
-            p1.ADRASInit(boardState,activeSide);
+            p1.ADRASInit(boardState, activeSide);
             p2.ADRASInit(boardState, 1 - activeSide);
         }
 
@@ -362,6 +374,9 @@ public class CheckersMain
         }
     }
 
+    /// <summary>
+    /// Run any dynamic AI processing after each game
+    /// </summary>
     private void RecalculateAccuracyMod()
     {
         float p1Acc = p1.RecalculateAccuracyMod();
@@ -383,11 +398,12 @@ public class CheckersMain
             {
                 p1.GetBoardRating(boardState, activeSide, out currRun);
                 prevRuns.Add(currRun.Clone());
-            }            
+            }
         }
 
         PlayerType otherPlayer;
         bool moveFound = false;
+
         if (activeSide == p1Side)
         {
             otherPlayer = p2.GetType();
@@ -453,10 +469,11 @@ public class CheckersMain
                 p2 = new AI();
                 break;
         }
-
-
     }
 
+    /// <summary>
+    /// Checks the status of the match, tests for winner / draw
+    /// </summary>
     public void CheckMatchStatus()
     {
         if (noMovesFound)
@@ -480,6 +497,7 @@ public class CheckersMain
         bool winnerFound = false;
         _winner = 0;
 
+        //If, after the current players move, the opponent no longer has any pieces, player wins
         if (_boardState.GetPieceCount(3 - _activeSide) == 0)
         {
             winnerFound = true;
@@ -534,6 +552,12 @@ public class CheckersMain
             p1.SetNeuralNetwork(netBackup);
     }
 
+    /// <summary>
+    /// Returns a list of all valid moves for the active side.
+    /// </summary>
+    /// <param name="_board"></param>
+    /// <param name="_activeSide"></param>
+    /// <returns></returns>
     public List<StoneMove> GenerateValidMoveList(Board _board, int _activeSide)
     {
 
@@ -549,7 +573,7 @@ public class CheckersMain
             TileState state = _board.state[i];
             if (state != TileState.Empty && _activeSide == _board.GetOwner(i))
             {
-               AI.FindValidMoves(_board, i, ref captureFound, ref firstCap, moves, false);
+                AI.FindValidMoves(_board, i, ref captureFound, ref firstCap, moves, false);
             }
         }
         return moves;
@@ -571,7 +595,7 @@ public class CheckersMain
             {
                 foreach (int pos in _move.capturedStones)
                 {
-                   AI.FindValidMoves(boardState, _move.endPos, ref captureFound, ref furtherCaps, moveCheck,false);
+                    AI.FindValidMoves(boardState, _move.endPos, ref captureFound, ref furtherCaps, moveCheck, false);
                 }
 
                 int blackRemaining = 0, whiteRemaining = 0;
@@ -609,9 +633,12 @@ public class CheckersMain
         }
     }
 
+    /// <summary>
+    /// Reverts to the board state at the start of the previous turn
+    /// </summary>
     public void RevertTurn()
     {
-        if (prevStates.Count > 2)
+        if (prevStates != null && prevStates.Count > 2)
         {
             boardState = prevStates[prevStates.Count - 3].Clone();
             prevStates.RemoveRange(prevStates.Count - 2, 2);
@@ -628,16 +655,6 @@ public class CheckersMain
             EventManager.TriggerEvent("turnOver");
             EventManager.TriggerEvent("boardUpdated");
         }
-    }
-
-    public static float FindAverageDiff(List<float> _list1, List<float> _list2)
-    {
-        float returnVal = 0;
-        for (int i = 0; i < _list1.Count && i < _list2.Count; i++)
-        {
-            returnVal += _list1[i] - _list2[i];
-        }
-        return returnVal / _list1.Count;
     }
 
     #region Getters
@@ -660,8 +677,6 @@ public class CheckersMain
     {
         return validMoves;
     }
-
-
 
     public int GetActiveSide()
     {
@@ -726,6 +741,16 @@ public class CheckersMain
     public int GetP1Side()
     {
         return p1Side;
+    }
+
+    public float GetP1LastAvgRatingDiff()
+    {
+        return p1LastAvgRatingDiff;
+    }
+
+    public float GetP2LastAvgRatingDiff()
+    {
+        return p2LastAvgRatingDiff;
     }
 
     #endregion

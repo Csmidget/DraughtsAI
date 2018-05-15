@@ -75,7 +75,8 @@ public class GameManager : MonoBehaviour {
 
     public void RevertTurn()
     {
-        model.RevertTurn();
+        if (model != null)
+            model.RevertTurn();
     }
 
     public void NewGame()
@@ -88,6 +89,7 @@ public class GameManager : MonoBehaviour {
         model.AttemptMove(_move);
     }
 
+    #region Getters
     public bool IsTraining()
     {
         return training;
@@ -212,6 +214,17 @@ public class GameManager : MonoBehaviour {
     {
         return model.GetP1Side();
     }
+
+    public float GetP1LastAvgRatingDiff()
+    {
+        return model.GetP1LastAvgRatingDiff();
+    }
+
+    public float GetP2LastAvgRatingDiff()
+    {
+        return model.GetP2LastAvgRatingDiff();
+    }
+#endregion
 
     public void Quit()
     {

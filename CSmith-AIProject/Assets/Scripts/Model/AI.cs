@@ -28,29 +28,34 @@ public class AI {
 
     public virtual bool PerformTurn(Board _currentBoard, int _aiPlayer, PlayerType otherPlayer, bool _firstTurn, out StoneMove _move, int _presetFirstMove)
     {
-
+        //initialize board node list if it isn't already
         if (boardNodes == null)
             boardNodes = new List<BoardNode>();
 
-        Search.iterations = 0;
+        //Placeholder move in case no valid moves are found
         _move = new StoneMove();
 
+        //Generate list of possible moves for board state
         List<StoneMove> possibleMoves = FindAllValidMoves(_currentBoard, _aiPlayer,true);
 
+        //Shuffle the list
         System.Random rnd = new System.Random();
         List<StoneMove> shuffledList = possibleMoves.OrderBy(item => rnd.Next()).ToList();
 
         if (shuffledList.Count > 0)
         {
-
+            //set selected move to first move in the list & the value to infinity, this will likely be overwritten immediately.
             StoneMove selectedMove = possibleMoves[0];
             float selectedMoveValue = -Mathf.Infinity;
 
+            //If its the first turn, run some extra processing
             if (_firstTurn)
             {
                 FFData temp;
+                //Find the initial board value for the player. This is used for dynamic difficulty AI's
                 float boardVal = GetBoardRating(_currentBoard, _aiPlayer,out temp);
                 InitBoardVal[_aiPlayer - 1] = boardVal;
+                //If player is black, select the preset first move from the list and exit.
                 if (_aiPlayer == 1)
                 {
                     if (_presetFirstMove >= 0 && _presetFirstMove < possibleMoves.Count)
@@ -62,11 +67,12 @@ public class AI {
                     return true;
                 }       
             }
+            //Main body
             else
             {
                 bool existingNodeFound = false;
                 BoardNode baseNode = new BoardNode(_currentBoard, _aiPlayer);
-
+                //If we already have a list of board nodes to use the attempt to locate the current board in the list.
                 if (boardNodes.Count > 0)
                 {
                     for (int i = 0; i < boardNodes.Count; i++)
@@ -79,13 +85,14 @@ public class AI {
                         }
                     }
                 }
-
+                //Refresh board node list
                 boardNodes = new List<BoardNode>();
-
+                //If we found a node, add the nodes children to the board node list
                 if (existingNodeFound && !baseNode.IsEndNode())
                 {
                     boardNodes.AddRange(baseNode.GetChildren());
                 }
+                //otherwise, generate a new node from this board and add that nodes children to the list
                 else
                 {                   
                     foreach (StoneMove m in shuffledList)
@@ -97,6 +104,7 @@ public class AI {
                     }
                 }
 
+                //Go through the board nodes and begin search
                 foreach (BoardNode bn in boardNodes)
                 {
                     bool prevStateFound = false;
@@ -121,7 +129,7 @@ public class AI {
                         selectedMoveValue = moveValue;
                     }
                 }
-
+                //If the other player is human. Then the next board state will be skipped, so next board node list has to be 2 ply away.
                 if (otherPlayer == PlayerType.Human)
                 {
                     List<BoardNode> newNodeList = new List<BoardNode>(0);
@@ -520,5 +528,28 @@ public class AI {
     public void TrainNet(FFData _prevRun, FFData _currRun, double _alpha, double _lambda)
     {
         net.BackPropagate(_prevRun, _currRun, _alpha, _lambda);
+    }
+
+    public float GetAverageDifference()
+    {
+        float returnVal = FindAverageDiff(playerBoardRatings, enemyBoardRatings);
+        if (float.IsNaN(returnVal)) returnVal = 0;
+        return returnVal;
+    }
+
+    /// <summary>
+    /// Finds the average difference between values of two lists
+    /// </summary>
+    /// <param name="_list1"></param>
+    /// <param name="_list2"></param>
+    /// <returns></returns>
+    public static float FindAverageDiff(List<float> _list1, List<float> _list2)
+    {
+        float returnVal = 0;
+        for (int i = 0; i < _list1.Count && i < _list2.Count; i++)
+        {
+            returnVal += _list1[i] - _list2[i];
+        }
+        return returnVal / _list1.Count;
     }
 }
