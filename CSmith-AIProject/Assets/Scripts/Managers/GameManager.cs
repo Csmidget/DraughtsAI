@@ -1,12 +1,16 @@
-﻿using System.Collections.Generic;
+﻿#define DEMOBUILD
+
+using System.Collections.Generic;
 using UnityEngine;
 
 public enum PlayerType {Human,AI,ADRNG,DROSAS,ADRAS}
 
-
 public class GameManager : MonoBehaviour {
 
     private static GameManager activeManager;
+
+    
+    public const bool DEMO = false;
 
     private CheckersMain model = new CheckersMain();
 
