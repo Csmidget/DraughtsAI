@@ -58,7 +58,7 @@ public class AI {
                 //If player is black, select the preset first move from the list and exit.
                 if (_aiPlayer == 1)
                 {
-                    if (_presetFirstMove >= 0 && _presetFirstMove < possibleMoves.Count)
+                    if (_presetFirstMove >= 0 && _presetFirstMove < possibleMoves.Count && !GameManager.DEMO)
                     {
                         _move = possibleMoves[_presetFirstMove];
                     }

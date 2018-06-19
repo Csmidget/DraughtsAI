@@ -35,7 +35,7 @@ public class ADRAS : AI {
                 InitBoardVal[_aiPlayer - 1] = boardVal;
                 if (_aiPlayer == 1)
                 {
-                    if (presetFirstMove >= 0 && presetFirstMove < possibleMoves.Count)
+                    if (presetFirstMove >= 0 && presetFirstMove < possibleMoves.Count && !GameManager.DEMO)
                     {
                         _move = possibleMoves[presetFirstMove];
                     }
